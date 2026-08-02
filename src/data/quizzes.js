@@ -67,38 +67,47 @@ const quizzes = {
     questions: [
       {
         id: 1,
-        type: "boolean",
+        type: "single",
         question:
-          "The shell is the program that interprets and executes the commands you type.",
-        options: ["True", "False"],
-        correctAnswers: [0],
+          "Which command creates a new empty file, or updates its timestamp if it already exists?",
+        options: ["mkdir", "touch", "cp", "rm"],
+        correctAnswers: [1],
       },
       {
         id: 2,
         type: "single",
-        question: "What is Bash?",
-        options: [
-          "A file manager",
-          "A common Linux shell",
-          "A text editor",
-          "A package manager",
-        ],
-        correctAnswers: [1],
+        question:
+          "Which mkdir flag lets you create nested parent directories in a single command?",
+        options: ["-v", "-r", "-p", "-a"],
+        correctAnswers: [2],
       },
       {
         id: 3,
-        type: "single",
-        question:
-          "Which symbol typically indicates the shell prompt for a regular user?",
-        options: ["#", "$", "%", "&"],
+        type: "boolean",
+        question: "rmdir can remove a directory that still contains files.",
+        options: ["True", "False"],
         correctAnswers: [1],
       },
       {
         id: 4,
-        type: "boolean",
-        question: "Every Linux distribution uses the exact same default shell.",
-        options: ["True", "False"],
+        type: "single",
+        question:
+          "Which command is required to copy a directory and everything inside it?",
+        options: ["cp", "cp -r", "mv", "touch"],
         correctAnswers: [1],
+      },
+      {
+        id: 5,
+        type: "single",
+        question:
+          "Why is rm considered riskier than deleting a file through a graphical file manager?",
+        options: [
+          "It only works on directories",
+          "It requires root privileges every time",
+          "It deletes immediately with no trash/recycle bin to recover from",
+          "It cannot be undone with Ctrl+Z in any application",
+        ],
+        correctAnswers: [2],
       },
     ],
   },

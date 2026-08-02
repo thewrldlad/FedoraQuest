@@ -15,9 +15,9 @@ const modules = [
       {
         id: 2,
         day: "Day 2",
-        title: "The Linux Shell",
+        title: "File & Directory Management",
         description:
-          "Understand what a shell is and how commands are interpreted.",
+          "Create, organize, copy, move, and remove files and directories using core Linux commands.",
         xp: 100,
       },
       {

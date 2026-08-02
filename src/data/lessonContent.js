@@ -137,6 +137,193 @@ drwxr-xr-x. 2 alice alice 4.0K Aug  1 10:30 Projects
       { title: "man pwd, man ls, man cd", detail: "Available locally on any Fedora installation (help cd for the bash builtin)" },
     ],
   },
+
+  2: {
+    estimatedTime: "60–75 minutes",
+
+    objectives: [
+      "Create directories and nested directory structures using mkdir",
+      "Remove empty directories safely using rmdir",
+      "Create empty files and update file timestamps using touch",
+      "Duplicate files and directories using cp, including recursive copies",
+      "Move and rename files and directories using mv",
+      "Delete files and directories using rm, understanding that the action is permanent",
+      "Visualize a directory structure using tree, and know how to install it on Fedora",
+      "Recognize why file management commands carry more risk than navigation commands",
+    ],
+
+    introduction:
+      "Day 1 taught you how to move around the filesystem without changing anything. Day 2 introduces the commands that actually shape it — creating project folders, duplicating files for backup, reorganizing downloads, and cleaning up what you no longer need. These commands are where Linux administration becomes genuinely productive, and also where a single mistyped command can do real, permanent damage. Understanding both the power and the risk of these tools is the point of this lesson.",
+
+    coreConcepts:
+      "On Linux, almost everything is represented as a file: regular documents, directories, and even devices are accessed through the same filesystem tree you navigated in Day 1. File management commands operate directly on that tree — they don't go through any intermediate safety layer.\n\nThis matters because, unlike a graphical file manager, none of the commands in this lesson use a Trash or Recycle Bin by default. When you remove something with rm, it is unlinked from the filesystem immediately; there is no 'restore from trash' step afterward. This isn't a flaw — it's a deliberate design choice that keeps these tools fast, scriptable, and predictable — but it means the responsibility for caution shifts entirely to you, the operator.\n\nA second core idea is the distinction between creating structure (mkdir, touch) and manipulating existing content (cp, mv, rm). Commands that create things are inherently low-risk: at worst, you create something you didn't need. Commands that copy, move, or remove existing content are higher-risk, because they can overwrite or destroy data that already exists. Keeping this distinction in mind will guide how carefully you should double-check a command before running it.",
+
+    commandSyntax: [
+      "pwd [OPTION]",
+      "ls [OPTION]... [FILE]...",
+      "cd [DIRECTORY]",
+      "mkdir [OPTION]... DIRECTORY...",
+      "rmdir [OPTION]... DIRECTORY...",
+      "touch [OPTION]... FILE...",
+      "cp [OPTION]... SOURCE DEST",
+      "mv [OPTION]... SOURCE DEST",
+      "rm [OPTION]... FILE...",
+      "tree [OPTION]... [DIRECTORY]",
+    ],
+
+    commandBreakdown: [
+      {
+        command: "pwd / ls / cd (recap from Day 1)",
+        options: [
+          { flag: "pwd", effect: "Prints your current location; used throughout this lesson to confirm where a command will act" },
+          { flag: "ls -l", effect: "Long listing, useful here for confirming a file was actually created, copied, or removed" },
+          { flag: "cd", effect: "Moves you into the directory you're about to manage" },
+        ],
+      },
+      {
+        command: "mkdir",
+        options: [
+          { flag: "(none)", effect: "Creates the named directory; fails if it already exists or its parent doesn't exist" },
+          { flag: "-p", effect: "Creates any missing parent directories along the way, and does not error if the directory already exists" },
+          { flag: "-v", effect: "Prints a message for each directory created" },
+        ],
+      },
+      {
+        command: "rmdir",
+        options: [
+          { flag: "(none)", effect: "Removes the named directory only if it is completely empty" },
+          { flag: "-p", effect: "Also removes now-empty parent directories after removing the target" },
+        ],
+      },
+      {
+        command: "touch",
+        options: [
+          { flag: "(none)", effect: "Creates an empty file if it doesn't exist, or updates its modification timestamp to now if it does" },
+          { flag: "-d STRING", effect: "Sets a specific timestamp instead of the current time" },
+        ],
+      },
+      {
+        command: "cp",
+        options: [
+          { flag: "(none)", effect: "Copies a file to a new location or name; fails on directories without -r" },
+          { flag: "-r / -R", effect: "Recursively copies a directory and everything inside it" },
+          { flag: "-i", effect: "Prompts for confirmation before overwriting an existing destination file" },
+          { flag: "-v", effect: "Prints each file as it is copied" },
+        ],
+      },
+      {
+        command: "mv",
+        options: [
+          { flag: "(none)", effect: "Moves a file or directory to a new location, or renames it if the destination is in the same directory" },
+          { flag: "-i", effect: "Prompts for confirmation before overwriting an existing destination file" },
+          { flag: "-v", effect: "Prints each file as it is moved" },
+        ],
+      },
+      {
+        command: "rm",
+        options: [
+          { flag: "(none)", effect: "Removes the named file(s) permanently — there is no trash to recover from" },
+          { flag: "-r", effect: "Recursively removes a directory and everything inside it" },
+          { flag: "-i", effect: "Prompts for confirmation before each removal" },
+          { flag: "-f", effect: "Forces removal without prompting and suppresses errors for missing files — use with particular caution" },
+        ],
+      },
+      {
+        command: "tree",
+        options: [
+          { flag: "(none)", effect: "Displays the directory structure starting at the current (or given) directory as a visual tree" },
+          { flag: "-L N", effect: "Limits the tree to N levels of depth" },
+          { flag: "-a", effect: "Includes hidden files and directories in the tree" },
+        ],
+      },
+    ],
+
+    practicalExamples: `[alice@fedora ~]$ mkdir Projects/quest-notes
+[alice@fedora ~]$ cd Projects/quest-notes
+[alice@fedora quest-notes]$ touch todo.txt readme.md
+[alice@fedora quest-notes]$ ls -l
+total 0
+-rw-r--r--. 1 alice alice 0 Aug  3 09:40 readme.md
+-rw-r--r--. 1 alice alice 0 Aug  3 09:40 todo.txt
+
+[alice@fedora quest-notes]$ cp todo.txt todo.bak.txt
+[alice@fedora quest-notes]$ mv todo.bak.txt ../../Documents/
+[alice@fedora quest-notes]$ ls ../../Documents
+todo.bak.txt
+
+[alice@fedora quest-notes]$ cd ..
+[alice@fedora Projects]$ tree
+.
+└── quest-notes
+    ├── readme.md
+    └── todo.txt
+
+1 directory, 2 files
+
+[alice@fedora Projects]$ rm quest-notes/readme.md
+[alice@fedora Projects]$ rmdir quest-notes
+rmdir: failed to remove 'quest-notes': Directory not empty
+[alice@fedora Projects]$ rm -r quest-notes`,
+
+    fedoraNotes: [
+      "tree is not installed by default on Fedora Workstation or Server. Install it with: sudo dnf install tree. Until it's installed, ls -R provides a rougher but always-available recursive listing.",
+      "GNU coreutils (the same cp, mv, rm implementations documented here) are Fedora's default toolset — behavior is consistent across Fedora releases and matches what's documented in the GNU Coreutils Manual.",
+      "There is no CLI-level Trash by default. GNOME Files (Nautilus) has its own graphical trash, but files removed with rm in the terminal bypass it entirely and are not recoverable through the desktop's Trash folder.",
+      "cp -a (archive mode) preserves permissions, timestamps, and — on SELinux-enabled systems like Fedora — as much of the security context as possible, which plain cp does not guarantee.",
+    ],
+
+    realWorldScenarios: [
+      "Scaffolding a new project: mkdir followed by touch to lay out an initial directory and starter files before writing any real code.",
+      "Safety copies before risky edits: cp config.conf config.conf.bak before modifying a configuration file, so the original can be restored if something breaks.",
+      "Reorganizing downloads: using mv to sort files out of ~/Downloads into the appropriate project or media directory.",
+      "Cleaning up build artifacts: rm -r used to delete generated output directories (e.g. a build/ or dist/ folder) before a fresh build.",
+      "Onboarding a teammate: running tree on a project directory to quickly show its structure instead of describing it verbally.",
+    ],
+
+    commonMistakes: [
+      "Forgetting -p with mkdir when creating a nested path whose parent doesn't exist yet, resulting in 'No such file or directory'.",
+      "Trying to rmdir a directory that still contains files instead of using rm -r.",
+      "Running rm -rf without first confirming pwd and the exact target path — there is no undo.",
+      "Forgetting cp requires -r to copy a directory, and getting an 'omitting directory' error.",
+      "Using mv or cp without -i and unknowingly overwriting a file that already existed at the destination.",
+      "Assuming touch can create directories — it only creates or updates files.",
+    ],
+
+    bestPractices: [
+      "Always confirm pwd and the exact target path before running rm, especially with -r or -f.",
+      "Prefer rm -i while you're still building confidence with destructive commands.",
+      "Use the -v flag on cp and mv during scripted or bulk operations, so you have a visible record of what happened.",
+      "Use mkdir -p to safely create nested directory structures in a single command.",
+      "Run tree (or ls -R) before and after a significant reorganization to visually confirm the result matches your intent.",
+    ],
+
+    handsOnLab: {
+      steps: [
+        "Navigate into ~/Projects.",
+        "Create a new directory named quest-notes inside it.",
+        "Move into quest-notes and create a file named todo.txt with touch.",
+        "Make a backup copy of todo.txt named todo.bak.txt using cp.",
+        "Move todo.bak.txt into ~/Documents using mv.",
+        "Confirm the result with ls in both ~/Projects/quest-notes and ~/Documents.",
+      ],
+      goal:
+        "Finish the lab with todo.txt still inside ~/Projects/quest-notes, and todo.bak.txt relocated into ~/Documents.",
+    },
+
+    challengeExercise:
+      "Inside ~/Pictures, create a directory named archive. Create two empty files named photo1.txt and photo2.txt directly inside ~/Pictures, then move both of them into the new archive directory in as few commands as possible. Finish by listing archive to confirm both files arrived. (Note: the in-app terminal simulator doesn't yet support tree — if you have access to a real Fedora system or the Fedora installation media, try installing it with sudo dnf install tree and running it against a real project directory to see the full visual output.)",
+
+    summary:
+      "File and directory management turns the filesystem from something you merely observe into something you actively shape: mkdir and touch create structure, cp and mv reorganize it, and rm removes it — permanently, with no built-in undo. tree (once installed) gives you a fast visual sanity check of the result. The recurring theme across this lesson's best practices is the same one: these commands are powerful specifically because they act immediately and without confirmation by default, so the habit of verifying before you execute is what separates confident Linux use from costly accidents.",
+
+    furtherReading: [
+      { title: "GNU Coreutils Manual", detail: "Reference entries for mkdir, rmdir, touch, cp, mv, rm" },
+      { title: "Fedora Docs", detail: "Quick Docs on managing files and directories from the command line" },
+      { title: "Red Hat Customer Portal Documentation", detail: "System Administrator's Guide, file and directory management" },
+      { title: "Linux Foundation resources", detail: "Introductory materials on core file management commands and safe usage patterns" },
+      { title: "man mkdir, man cp, man mv, man rm, man tree", detail: "Available locally on any Fedora installation; install tree first via sudo dnf install tree" },
+    ],
+  },
 };
 
 export default lessonContent;
