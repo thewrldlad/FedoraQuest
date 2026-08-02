@@ -36,6 +36,18 @@ export function GameProvider({ children }) {
     return saved ? JSON.parse(saved) : [1];
   });
 
+  // Completed labs
+  const [completedLabs, setCompletedLabs] = useState(() => {
+    const saved = localStorage.getItem("completedLabs");
+    return saved ? JSON.parse(saved) : [];
+  });
+
+  // Unlocked labs
+  const [unlockedLabs, setUnlockedLabs] = useState(() => {
+    const saved = localStorage.getItem("unlockedLabs");
+    return saved ? JSON.parse(saved) : [1];
+  });
+
   // Achievements
   const [achievements, setAchievements] = useState(() => {
     const saved = localStorage.getItem("achievements");
@@ -75,6 +87,22 @@ export function GameProvider({ children }) {
       JSON.stringify(unlockedLessons)
     );
   }, [unlockedLessons]);
+
+  // Save completed labs
+  useEffect(() => {
+    localStorage.setItem(
+      "completedLabs",
+      JSON.stringify(completedLabs)
+    );
+  }, [completedLabs]);
+
+  // Save unlocked labs
+  useEffect(() => {
+    localStorage.setItem(
+      "unlockedLabs",
+      JSON.stringify(unlockedLabs)
+    );
+  }, [unlockedLabs]);
 
   // Save achievements
   useEffect(() => {
@@ -151,6 +179,12 @@ export function GameProvider({ children }) {
 
         unlockedLessons,
         setUnlockedLessons,
+
+        completedLabs,
+        setCompletedLabs,
+
+        unlockedLabs,
+        setUnlockedLabs,
 
         achievements,
         unlockAchievement,
