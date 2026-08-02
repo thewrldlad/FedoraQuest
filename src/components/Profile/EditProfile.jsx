@@ -1,5 +1,6 @@
 import { useState } from "react";
 import Button from "../Button/Button";
+import AvatarUploader from "./AvatarUploader";
 
 const LEARNING_LEVELS = [
   "Linux Beginner",
@@ -18,10 +19,19 @@ export default function EditProfile({ profile, onSave, onCancel }) {
     setFormData((current) => ({ ...current, [field]: event.target.value }));
   };
 
+  const handleAvatarChange = (newAvatarUrl) => {
+    setFormData((current) => ({ ...current, avatarUrl: newAvatarUrl }));
+  };
+
   const handleSubmit = (event) => {
     event.preventDefault();
     onSave(formData);
   };
+
+  const initials = (formData.fullName || formData.username || "?")
+    .trim()
+    .slice(0, 2)
+    .toUpperCase();
 
   return (
     <section className="bg-fedora-surface border border-fedora-border rounded-xl p-8 shadow-sm mb-8">
@@ -31,19 +41,13 @@ export default function EditProfile({ profile, onSave, onCancel }) {
 
       <form onSubmit={handleSubmit} className="space-y-5">
         <div>
-          <label
-            className="block text-sm text-fedora-muted mb-1"
-            htmlFor="avatarUrl"
-          >
-            Avatar Image URL
-          </label>
-          <input
-            id="avatarUrl"
-            type="text"
+          <p className="block text-sm text-fedora-muted mb-2">
+            Profile Picture
+          </p>
+          <AvatarUploader
             value={formData.avatarUrl}
-            onChange={handleChange("avatarUrl")}
-            placeholder="https://example.com/avatar.png"
-            className={INPUT_CLASSES}
+            fallbackInitials={initials}
+            onChange={handleAvatarChange}
           />
         </div>
 
