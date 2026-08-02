@@ -5,9 +5,6 @@ import {
   BookOpen,
   Terminal,
   FlaskConical,
-  FolderKanban,
-  LineChart,
-  StickyNote,
   Award,
   User,
   Settings,
@@ -49,29 +46,11 @@ const navGroups = [
         path: "/commands",
         icon: Terminal,
       },
-      {
-        id: "projects",
-        label: "Projects",
-        path: "/projects",
-        icon: FolderKanban,
-      },
     ],
   },
         {
   label: "Track",
   items: [
-    {
-      id: "progress",
-      label: "Progress",
-      path: "/progress",
-      icon: LineChart,
-    },
-    {
-      id: "notes",
-      label: "Notes",
-      path: "/notes",
-      icon: StickyNote,
-    },
     {
       id: "achievements",
       label: "Achievements",
