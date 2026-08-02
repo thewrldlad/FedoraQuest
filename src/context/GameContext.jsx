@@ -48,6 +48,12 @@ export function GameProvider({ children }) {
     return saved ? JSON.parse(saved) : [1];
   });
 
+  // Quiz results (per lesson id)
+  const [quizResults, setQuizResults] = useState(() => {
+    const saved = localStorage.getItem("quizResults");
+    return saved ? JSON.parse(saved) : {};
+  });
+
   // Achievements
   const [achievements, setAchievements] = useState(() => {
     const saved = localStorage.getItem("achievements");
@@ -104,6 +110,11 @@ export function GameProvider({ children }) {
     );
   }, [unlockedLabs]);
 
+  // Save quiz results
+  useEffect(() => {
+    localStorage.setItem("quizResults", JSON.stringify(quizResults));
+  }, [quizResults]);
+
   // Save achievements
   useEffect(() => {
     localStorage.setItem(
@@ -157,6 +168,20 @@ export function GameProvider({ children }) {
     });
   };
 
+  // Quiz result helper — keeps the best score and a sticky passed flag
+  const recordQuizResult = (lessonId, score, passed) => {
+    setQuizResults((current) => {
+      const existing = current[lessonId];
+      const bestScore = existing ? Math.max(existing.bestScore, score) : score;
+      const hasPassed = existing ? existing.passed || passed : passed;
+
+      return {
+        ...current,
+        [lessonId]: { bestScore, passed: hasPassed },
+      };
+    });
+  };
+
   // Automatically check achievements
   useEffect(() => {
     checkAchievements({
@@ -190,6 +215,9 @@ export function GameProvider({ children }) {
         unlockAchievement,
 
         streak,
+
+        quizResults,
+        recordQuizResult,
       }}
     >
       {children}
