@@ -34,8 +34,8 @@ function App() {
           <Route
   path="/"
   element={<Dashboard />}
-/>         
-         
+/>
+
           <Route
             path="/course"
             element={
@@ -60,11 +60,11 @@ function App() {
           <Route path="/labs" element={<Labs />} />
 
           <Route path="/commands" element={<Commands />} />
-        
+
           <Route
   path="/achievements"
   element={<Achievements />}
-/>       
+/>
  </Routes>
       </main>
     </div>
