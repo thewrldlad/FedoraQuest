@@ -9,6 +9,7 @@ import {
   LineChart,
   StickyNote,
   Award,
+  User,
   Settings,
   Flame,
   ChevronsLeft,
@@ -77,8 +78,14 @@ const navGroups = [
       path: "/achievements",
       icon: Award,
     },
+    {
+      id: "profile",
+      label: "Profile",
+      path: "/profile",
+      icon: User,
+    },
   ],
-},      
+},
  
 ];
 

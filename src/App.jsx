@@ -8,6 +8,7 @@ import Labs from "./pages/Labs";
 import Commands from "./pages/Commands";
 import Lesson from "./pages/Lesson";
 import Achievements from "./pages/Achievements";
+import Profile from "./pages/Profile";
 
 function App() {
   return (
@@ -39,6 +40,8 @@ function App() {
   path="/achievements"
   element={<Achievements />}
 />
+
+          <Route path="/profile" element={<Profile />} />
  </Routes>
       </main>
     </div>
