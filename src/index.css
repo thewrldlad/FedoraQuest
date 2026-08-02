@@ -1,0 +1,16 @@
+@import "tailwindcss";
+
+@theme {
+  /* Fedora Quest — professional dark blue palette */
+  --color-fedora-bg: #0d1b2e;       /* page background */
+  --color-fedora-surface: #14243d;  /* sidebar / card surface */
+  --color-fedora-border: #1c3454;   /* hairlines, hover states */
+  --color-fedora-accent: #3c6eb4;   /* Fedora blue — primary accent */
+  --color-fedora-accent-light: #7fb8e8; /* icons, subtle highlights */
+  --color-fedora-text: #c7d4e3;     /* primary text on dark surfaces */
+  --color-fedora-muted: #6b7f99;    /* labels, secondary text */
+  --color-fedora-streak: #e08a3c;   /* streak flame accent */
+
+  --font-display: "Red Hat Display", sans-serif;
+  --font-body: "Inter", sans-serif;
+}
