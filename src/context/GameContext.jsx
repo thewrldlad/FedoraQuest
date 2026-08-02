@@ -19,7 +19,7 @@ function formatDate(date) {
 
 export function GameProvider({ children }) {
   // XP
-  const [xp, setXp] = usePersistedState("xp", 1250, {
+  const [xp, setXp] = usePersistedState("xp", 0, {
     serialize: String,
     deserialize: Number,
   });
