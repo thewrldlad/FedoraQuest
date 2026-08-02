@@ -74,6 +74,16 @@ export function GameProvider({ children }) {
     }
   );
 
+  // First seen date — set once, used for "Member Since" on the Profile page
+  const [firstSeenDate] = usePersistedState(
+    "firstSeenDate",
+    formatDate(new Date()),
+    {
+      serialize: (value) => value,
+      deserialize: (value) => value,
+    }
+  );
+
   const previousLessonCount = useRef(completedLessons.length);
 
   // Update streak when a new lesson is completed
@@ -159,6 +169,8 @@ export function GameProvider({ children }) {
 
         quizResults,
         recordQuizResult,
+
+        firstSeenDate,
       }}
     >
       {children}
