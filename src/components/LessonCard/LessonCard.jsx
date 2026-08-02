@@ -1,4 +1,5 @@
 import { Link } from "react-router-dom";
+import Button from "../Button/Button";
 
 export default function LessonCard({
   day,
@@ -21,12 +22,9 @@ export default function LessonCard({
         {description}
       </p>
 
-      <Link
-        to={`/lesson/${lessonId}`}
-        className="inline-block bg-fedora-accent hover:opacity-90 transition-opacity text-white px-5 py-2 rounded-lg"
-      >
+      <Button as={Link} to={`/lesson/${lessonId}`}>
         {buttonText}
-      </Link>
+      </Button>
     </section>
   );
 }

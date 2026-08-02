@@ -3,6 +3,7 @@ import { useNavigate, useParams } from "react-router-dom";
 import lessons from "../data/lessons";
 import quizzes from "../data/quizzes";
 import Quiz from "../components/Quiz/Quiz";
+import Button from "../components/Button/Button";
 import { useGame } from "../context/GameContext";
 
 export default function Lesson() {
@@ -113,43 +114,32 @@ const handleQuizComplete = (score, passed) => {
 
                 <div className="flex items-center gap-3">
                   {isCompleted && (
-                    <button
-                      disabled
-                      className="px-5 py-2 rounded-lg text-white bg-green-600 cursor-not-allowed transition-opacity"
-                    >
+                    <Button disabled variant="success">
                       ✓ Lesson Completed
-                    </button>
+                    </Button>
                   )}
 
-                  <button
+                  <Button
+                    variant={isCompleted ? "secondary" : "primary"}
                     onClick={startQuiz}
-                    className={
-                      isCompleted
-                        ? "px-5 py-2 rounded-lg text-fedora-text border border-fedora-border hover:bg-fedora-border transition-colors"
-                        : "px-5 py-2 rounded-lg text-white bg-fedora-accent hover:opacity-90 transition-opacity"
-                    }
                   >
                     {quizResult ? "Retake Quiz" : "Start Quiz"}
-                  </button>
+                  </Button>
                 </div>
               </>
             )}
           </div>
         ) : (
           <div className="mt-8">
-            <button
+            <Button
               disabled={isCompleted}
               onClick={completeLesson}
-              className={`px-5 py-2 rounded-lg text-white transition-opacity ${
-                isCompleted
-                  ? "bg-green-600 cursor-not-allowed"
-                  : "bg-fedora-accent hover:opacity-90"
-              }`}
+              variant={isCompleted ? "success" : "primary"}
             >
               {isCompleted
                 ? "✓ Lesson Completed"
                 : "Mark Lesson Complete"}
-            </button>
+            </Button>
           </div>
         )}
       </div>

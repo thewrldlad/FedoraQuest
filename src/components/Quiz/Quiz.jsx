@@ -1,4 +1,5 @@
 import { useState } from "react";
+import Button from "../Button/Button";
 
 export default function Quiz({ questions, passingScore, onComplete }) {
   const [currentIndex, setCurrentIndex] = useState(0);
@@ -80,12 +81,9 @@ export default function Quiz({ questions, passingScore, onComplete }) {
             : `❌ Not passed (${passingScore}% required)`}
         </p>
 
-        <button
-          onClick={() => onComplete(percentage, passed)}
-          className="mt-5 bg-fedora-accent hover:opacity-90 transition-opacity text-white px-5 py-2 rounded-lg"
-        >
+        <Button className="mt-5" onClick={() => onComplete(percentage, passed)}>
           Continue
-        </button>
+        </Button>
       </div>
     );
   }
@@ -143,22 +141,18 @@ export default function Quiz({ questions, passingScore, onComplete }) {
 
       <div className="mt-5">
         {showFeedback ? (
-          <button
-            onClick={handleNext}
-            className="bg-fedora-accent hover:opacity-90 transition-opacity text-white px-5 py-2 rounded-lg"
-          >
+          <Button onClick={handleNext}>
             {currentIndex === questions.length - 1
               ? "See Results"
               : "Next Question"}
-          </button>
+          </Button>
         ) : (
-          <button
+          <Button
             onClick={handleSubmitAnswer}
             disabled={selected.length === 0}
-            className="bg-fedora-accent hover:opacity-90 transition-opacity text-white px-5 py-2 rounded-lg disabled:opacity-50 disabled:cursor-not-allowed"
           >
             Submit Answer
-          </button>
+          </Button>
         )}
       </div>
     </div>

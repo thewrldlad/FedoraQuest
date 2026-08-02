@@ -4,6 +4,7 @@ import modules from "../data/modules";
 import labCategories from "../data/labs";
 import terminalExercises from "../data/terminalExercises";
 import Terminal from "../components/Terminal/Terminal";
+import Button from "../components/Button/Button";
 import { useGame } from "../context/GameContext";
 
 export default function Labs() {
@@ -144,16 +145,16 @@ export default function Labs() {
                                 ✅ Completed
                               </span>
                             ) : unlocked ? (
-                              <button
+                              <Button
+                                size="sm"
                                 onClick={() =>
                                   setActiveLabId((current) =>
                                     current === lab.id ? null : lab.id
                                   )
                                 }
-                                className="bg-fedora-accent hover:opacity-90 transition-opacity text-white px-4 py-2 rounded-lg text-sm"
                               >
                                 {isActive ? "Close" : "Start Lab"}
-                              </button>
+                              </Button>
                             ) : (
                               <span className="text-sm text-gray-500">
                                 🔒 Locked
@@ -182,12 +183,12 @@ export default function Labs() {
                                   terminal exercise yet. Check back soon.
                                 </p>
 
-                                <button
+                                <Button
+                                  className="mt-4"
                                   onClick={() => completeLab(lab)}
-                                  className="mt-4 bg-fedora-accent hover:opacity-90 transition-opacity text-white px-5 py-2 rounded-lg"
                                 >
                                   Mark Lab Complete
-                                </button>
+                                </Button>
                               </>
                             )}
                           </div>
