@@ -1,5 +1,6 @@
 import { Link, useLocation } from "react-router-dom";
 import { useState } from "react";
+import { useGame } from "../../context/GameContext";
 import {
   LayoutDashboard,
   BookOpen,
@@ -68,11 +69,10 @@ const navGroups = [
  
 ];
 
-export default function Sidebar({
-  streakDays = 7,
-}) {
+export default function Sidebar() {
   const [collapsed, setCollapsed] = useState(false);
   const location = useLocation();
+  const { streak } = useGame();
 
   return (
     <div
@@ -165,7 +165,7 @@ export default function Sidebar({
           {!collapsed && (
             <span className="text-sm text-fedora-text">
               <span className="font-medium">
-                {streakDays} day
+                {streak} day
               </span>{" "}
               <span className="text-fedora-muted">
                 streak

@@ -3,11 +3,19 @@ import {
   useContext,
   useState,
   useEffect,
+  useRef,
 } from "react";
 
 import checkAchievements from "../utils/checkAchievements";
 
 const GameContext = createContext();
+
+function formatDate(date) {
+  const year = date.getFullYear();
+  const month = String(date.getMonth() + 1).padStart(2, "0");
+  const day = String(date.getDate()).padStart(2, "0");
+  return `${year}-${month}-${day}`;
+}
 
 export function GameProvider({ children }) {
   // XP
@@ -33,6 +41,19 @@ export function GameProvider({ children }) {
     const saved = localStorage.getItem("achievements");
     return saved ? JSON.parse(saved) : [];
   });
+
+  // Study streak
+  const [streak, setStreak] = useState(() => {
+    const saved = localStorage.getItem("streak");
+    return saved ? Number(saved) : 0;
+  });
+
+  // Last study date
+  const [lastStudyDate, setLastStudyDate] = useState(() => {
+    return localStorage.getItem("lastStudyDate");
+  });
+
+  const previousLessonCount = useRef(completedLessons.length);
 
   // Save XP
   useEffect(() => {
@@ -62,6 +83,38 @@ export function GameProvider({ children }) {
       JSON.stringify(achievements)
     );
   }, [achievements]);
+
+  // Save streak
+  useEffect(() => {
+    localStorage.setItem("streak", streak);
+  }, [streak]);
+
+  // Save last study date
+  useEffect(() => {
+    if (lastStudyDate) {
+      localStorage.setItem("lastStudyDate", lastStudyDate);
+    }
+  }, [lastStudyDate]);
+
+  // Update streak when a new lesson is completed
+  useEffect(() => {
+    if (completedLessons.length > previousLessonCount.current) {
+      const today = formatDate(new Date());
+
+      if (lastStudyDate !== today) {
+        const yesterday = formatDate(
+          new Date(Date.now() - 24 * 60 * 60 * 1000)
+        );
+
+        setStreak((current) =>
+          lastStudyDate === yesterday ? current + 1 : 1
+        );
+        setLastStudyDate(today);
+      }
+    }
+
+    previousLessonCount.current = completedLessons.length;
+  }, [completedLessons, lastStudyDate]);
 
   // XP helper
   const addXP = (amount) => {
@@ -100,6 +153,8 @@ export function GameProvider({ children }) {
 
         achievements,
         unlockAchievement,
+
+        streak,
       }}
     >
       {children}

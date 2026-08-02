@@ -10,6 +10,7 @@ import { useGame } from "../context/GameContext";
 export default function Dashboard() {
   const {
     completedLessons,
+    streak,
   } = useGame();
 
   const progress = Math.round(
@@ -59,7 +60,7 @@ export default function Dashboard() {
 
         <ProgressCard
           title="Study Streak"
-          value="0 Days"
+          value={`${streak} Days`}
           subtitle="Keep learning daily"
         />
       </section>
