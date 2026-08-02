@@ -4,13 +4,16 @@ import { BrowserRouter } from "react-router-dom";
 import "./index.css";
 import App from "./App";
 import { GameProvider } from "./context/GameContext";
+import ErrorBoundary from "./components/ErrorBoundary/ErrorBoundary";
 
 ReactDOM.createRoot(document.getElementById("root")).render(
   <React.StrictMode>
-    <BrowserRouter>
-      <GameProvider>
-        <App />
-      </GameProvider>
-    </BrowserRouter>
+    <ErrorBoundary>
+      <BrowserRouter>
+        <GameProvider>
+          <App />
+        </GameProvider>
+      </BrowserRouter>
+    </ErrorBoundary>
   </React.StrictMode>
 );
