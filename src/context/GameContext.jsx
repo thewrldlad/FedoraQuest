@@ -136,8 +136,9 @@ export function GameProvider({ children }) {
       completedLessons,
       achievements,
       unlockAchievement,
+      streak,
     });
-  }, [xp, completedLessons]);
+  }, [xp, completedLessons, streak]);
 
   return (
     <GameContext.Provider

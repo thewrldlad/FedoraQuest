@@ -1,8 +1,11 @@
+import modules from "../data/modules";
+
 export default function checkAchievements({
   xp,
   completedLessons,
   achievements,
   unlockAchievement,
+  streak,
 }) {
   // First Lesson
   if (
@@ -34,5 +37,51 @@ export default function checkAchievements({
     !achievements.includes("ten_lessons")
   ) {
     unlockAchievement("ten_lessons");
+  }
+
+  // Complete first module
+  const firstModule = modules[0];
+  if (
+    firstModule &&
+    firstModule.lessons.every((lesson) =>
+      completedLessons.includes(lesson.id)
+    ) &&
+    !achievements.includes("first_module")
+  ) {
+    unlockAchievement("first_module");
+  }
+
+  // Reach 500 XP
+  if (
+    xp >= 500 &&
+    !achievements.includes("xp_500")
+  ) {
+    unlockAchievement("xp_500");
+  }
+
+  // Reach a 7-day study streak
+  if (
+    streak >= 7 &&
+    !achievements.includes("streak_7")
+  ) {
+    unlockAchievement("streak_7");
+  }
+
+  // Reach a 30-day study streak
+  if (
+    streak >= 30 &&
+    !achievements.includes("streak_30")
+  ) {
+    unlockAchievement("streak_30");
+  }
+
+  // Complete the entire course
+  const allLessons = modules.flatMap((module) => module.lessons);
+  if (
+    allLessons.length > 0 &&
+    allLessons.every((lesson) => completedLessons.includes(lesson.id)) &&
+    !achievements.includes("course_complete")
+  ) {
+    unlockAchievement("course_complete");
   }
 }
