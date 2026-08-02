@@ -1,0 +1,154 @@
+import { useState } from "react";
+import Button from "../Button/Button";
+
+const LEARNING_LEVELS = [
+  "Linux Beginner",
+  "Fedora Explorer",
+  "Linux Apprentice",
+  "System Administrator",
+];
+
+const INPUT_CLASSES =
+  "w-full bg-fedora-bg border border-fedora-border rounded-lg px-3 py-2 text-fedora-text focus:outline-none focus:border-fedora-accent";
+
+export default function EditProfile({ profile, onSave, onCancel }) {
+  const [formData, setFormData] = useState(profile);
+
+  const handleChange = (field) => (event) => {
+    setFormData((current) => ({ ...current, [field]: event.target.value }));
+  };
+
+  const handleSubmit = (event) => {
+    event.preventDefault();
+    onSave(formData);
+  };
+
+  return (
+    <section className="bg-fedora-surface border border-fedora-border rounded-xl p-8 shadow-sm mb-8">
+      <h2 className="text-xl font-display text-fedora-text mb-6">
+        Edit Profile
+      </h2>
+
+      <form onSubmit={handleSubmit} className="space-y-5">
+        <div>
+          <label
+            className="block text-sm text-fedora-muted mb-1"
+            htmlFor="avatarUrl"
+          >
+            Avatar Image URL
+          </label>
+          <input
+            id="avatarUrl"
+            type="text"
+            value={formData.avatarUrl}
+            onChange={handleChange("avatarUrl")}
+            placeholder="https://example.com/avatar.png"
+            className={INPUT_CLASSES}
+          />
+        </div>
+
+        <div className="grid grid-cols-1 sm:grid-cols-2 gap-5">
+          <div>
+            <label
+              className="block text-sm text-fedora-muted mb-1"
+              htmlFor="fullName"
+            >
+              Full Name
+            </label>
+            <input
+              id="fullName"
+              type="text"
+              value={formData.fullName}
+              onChange={handleChange("fullName")}
+              className={INPUT_CLASSES}
+            />
+          </div>
+
+          <div>
+            <label
+              className="block text-sm text-fedora-muted mb-1"
+              htmlFor="username"
+            >
+              Username
+            </label>
+            <input
+              id="username"
+              type="text"
+              value={formData.username}
+              onChange={handleChange("username")}
+              className={INPUT_CLASSES}
+            />
+          </div>
+        </div>
+
+        <div className="grid grid-cols-1 sm:grid-cols-2 gap-5">
+          <div>
+            <label
+              className="block text-sm text-fedora-muted mb-1"
+              htmlFor="email"
+            >
+              Email
+            </label>
+            <input
+              id="email"
+              type="email"
+              value={formData.email}
+              onChange={handleChange("email")}
+              className={INPUT_CLASSES}
+            />
+          </div>
+
+          <div>
+            <label
+              className="block text-sm text-fedora-muted mb-1"
+              htmlFor="learningLevel"
+            >
+              Learning Level
+            </label>
+            <select
+              id="learningLevel"
+              value={formData.learningLevel}
+              onChange={handleChange("learningLevel")}
+              className={INPUT_CLASSES}
+            >
+              {LEARNING_LEVELS.map((level) => (
+                <option key={level} value={level}>
+                  {level}
+                </option>
+              ))}
+            </select>
+          </div>
+        </div>
+
+        <div>
+          <label
+            className="block text-sm text-fedora-muted mb-1"
+            htmlFor="bio"
+          >
+            Bio
+          </label>
+          <textarea
+            id="bio"
+            value={formData.bio}
+            onChange={handleChange("bio")}
+            rows={3}
+            maxLength={240}
+            className={`${INPUT_CLASSES} resize-none`}
+          />
+        </div>
+
+        <p className="text-fedora-muted text-xs">
+          Your profile is saved locally in this browser only — there's no
+          account system yet.
+        </p>
+
+        <div className="flex gap-3">
+          <Button type="submit">Save Changes</Button>
+          <Button type="button" variant="secondary" onClick={onCancel}>
+            Cancel
+          </Button>
+        </div>
+      </form>
+    </section>
+  );
+}
