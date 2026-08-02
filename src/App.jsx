@@ -1,7 +1,5 @@
 import { Routes, Route } from "react-router-dom";
 
-import { useGame } from "./context/GameContext";
-
 import Sidebar from "./components/Sidebar/Sidebar";
 
 import Dashboard from "./pages/Dashboard";
@@ -11,20 +9,7 @@ import Commands from "./pages/Commands";
 import Lesson from "./pages/Lesson";
 import Achievements from "./pages/Achievements";
 
-import lessons from "./data/lessons";
-
 function App() {
-  const {
-    completedLessons,
-    setCompletedLessons,
-    unlockedLessons,
-    setUnlockedLessons,
-  } = useGame();
-
-  const progress = Math.round(
-    (completedLessons.length / lessons.length) * 100
-  );
-
   return (
     <div className="flex h-screen bg-fedora-bg">
       <Sidebar />
@@ -38,23 +23,12 @@ function App() {
 
           <Route
             path="/course"
-            element={
-              <Course
-                unlockedLessons={unlockedLessons}
-                completedLessons={completedLessons}
-              />
-            }
+            element={<Course />}
           />
 
           <Route
             path="/lesson/:id"
-            element={
-              <Lesson
-                completedLessons={completedLessons}
-                setCompletedLessons={setCompletedLessons}
-                setUnlockedLessons={setUnlockedLessons}
-              />
-            }
+            element={<Lesson />}
           />
 
           <Route path="/labs" element={<Labs />} />

@@ -1,11 +1,10 @@
 import { useState } from "react";
 import { Link } from "react-router-dom";
 import modules from "../data/modules";
+import { useGame } from "../context/GameContext";
 
-export default function Course({
-  unlockedLessons = [1],
-  completedLessons = [],
-}) {
+export default function Course() {
+  const { unlockedLessons, completedLessons } = useGame();
   const [expandedModules, setExpandedModules] = useState([1]);
 
   return (
