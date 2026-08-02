@@ -2,6 +2,8 @@ import { useState } from "react";
 import { CheckCircle2, Circle, Lock } from "lucide-react";
 import modules from "../data/modules";
 import labCategories from "../data/labs";
+import terminalExercises from "../data/terminalExercises";
+import Terminal from "../components/Terminal/Terminal";
 import { useGame } from "../context/GameContext";
 
 export default function Labs() {
@@ -162,19 +164,32 @@ export default function Labs() {
 
                         {isActive && unlocked && !completed && (
                           <div className="mt-4 pt-4 border-t border-fedora-border">
-                            <p className="text-fedora-text leading-7">
-                              🚧 Lab instructions coming soon. This lab
-                              will walk you through a hands-on terminal
-                              exercise once the interactive environment
-                              is built.
-                            </p>
+                            {terminalExercises[lab.id] ? (
+                              <>
+                                <p className="text-fedora-text leading-7 mb-4">
+                                  {terminalExercises[lab.id].prompt}
+                                </p>
 
-                            <button
-                              onClick={() => completeLab(lab)}
-                              className="mt-4 bg-fedora-accent hover:opacity-90 transition-opacity text-white px-5 py-2 rounded-lg"
-                            >
-                              Mark Lab Complete
-                            </button>
+                                <Terminal
+                                  exercise={terminalExercises[lab.id]}
+                                  onExerciseComplete={() => completeLab(lab)}
+                                />
+                              </>
+                            ) : (
+                              <>
+                                <p className="text-fedora-text leading-7">
+                                  🚧 This lab doesn't have an interactive
+                                  terminal exercise yet. Check back soon.
+                                </p>
+
+                                <button
+                                  onClick={() => completeLab(lab)}
+                                  className="mt-4 bg-fedora-accent hover:opacity-90 transition-opacity text-white px-5 py-2 rounded-lg"
+                                >
+                                  Mark Lab Complete
+                                </button>
+                              </>
+                            )}
                           </div>
                         )}
                       </div>

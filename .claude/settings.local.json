@@ -1,7 +1,9 @@
 {
   "permissions": {
     "allow": [
-      "Bash(python3 -c ' *)"
+      "Bash(python3 -c ' *)",
+      "Read(//usr/bin/**)",
+      "Bash(command -v node)"
     ]
   }
 }
