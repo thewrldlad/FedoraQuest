@@ -1,6 +1,7 @@
 import { Link, useLocation } from "react-router-dom";
 import { useState } from "react";
 import { useGame } from "../../context/GameContext";
+import UserMenu from "../Auth/UserMenu";
 import {
   LayoutDashboard,
   BookOpen,
@@ -8,7 +9,6 @@ import {
   FlaskConical,
   Award,
   User,
-  Settings,
   Flame,
   ChevronsLeft,
   ChevronsRight,
@@ -148,16 +148,7 @@ export default function Sidebar() {
 
       <div className="border-t border-fedora-border p-3">
 
-        <button
-          className="w-full flex items-center gap-3 rounded-md px-3 py-2 text-sm text-fedora-text hover:bg-fedora-border"
-        >
-          <Settings size={17} />
-
-          {!collapsed && (
-            <span>Settings</span>
-          )}
-        </button>
-
+        <UserMenu collapsed={collapsed} />
 
         <div className="mt-3 rounded-md px-3 py-2.5 flex items-center gap-2 bg-fedora-bg">
           <Flame size={16} className="text-fedora-streak" />
