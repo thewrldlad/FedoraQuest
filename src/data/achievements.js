@@ -53,6 +53,36 @@ const achievements = [
     description: "Complete the entire FedoraQuest course.",
     icon: "🎓",
   },
+  {
+    id: "first_quiz",
+    title: "First Quiz",
+    description: "Complete your first quiz.",
+    icon: "📝",
+  },
+  {
+    id: "perfect_score",
+    title: "Perfect Score",
+    description: "Score 100% on any quiz.",
+    icon: "💯",
+  },
+  {
+    id: "quiz_master",
+    title: "Quiz Master",
+    description: "Pass every available quiz.",
+    icon: "🧠",
+  },
+  {
+    id: "hundred_questions",
+    title: "Centurion",
+    description: "Answer 100 quiz questions.",
+    icon: "🔢",
+  },
+  {
+    id: "course_expert",
+    title: "Course Expert",
+    description: "Pass every quiz with an average score of 90% or higher.",
+    icon: "🎓",
+  },
 ];
 
 export default achievements;

@@ -50,12 +50,15 @@ export default function useCourseProgress() {
 
   // Centralizes "complete a lesson" (previously duplicated inline in
   // Lesson.jsx with a hardcoded XP amount) into one place that always
-  // awards the lesson's real declared XP.
-  const markLessonComplete = (lessonId) => {
+  // awards the lesson's real declared XP — or, when a quiz gates the
+  // lesson, the XP the quiz itself calculated (so completing a
+  // quiz-gated lesson doesn't award both the flat lesson XP and a
+  // separate quiz XP for the same action).
+  const markLessonComplete = (lessonId, xpOverride = null) => {
     const lesson = lessons.find((l) => l.id === lessonId);
     if (!lesson || completedLessons.includes(lessonId)) return;
 
-    addXP(lesson.xp);
+    addXP(xpOverride !== null ? xpOverride : lesson.xp);
 
     setCompletedLessons((current) =>
       current.includes(lessonId) ? current : [...current, lessonId]

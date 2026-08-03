@@ -1,4 +1,6 @@
 import modules from "../data/modules";
+import quizzesData from "../data/quizzes";
+import { checkAllQuizzesPassed, getAverageQuizScore } from "../services/quizService";
 
 export default function checkAchievements({
   xp,
@@ -6,6 +8,7 @@ export default function checkAchievements({
   achievements,
   unlockAchievement,
   streak,
+  quizResults,
 }) {
   // First Lesson
   if (
@@ -83,5 +86,38 @@ export default function checkAchievements({
     !achievements.includes("course_complete")
   ) {
     unlockAchievement("course_complete");
+  }
+
+  // First Quiz
+  if (
+    Object.keys(quizResults).length >= 1 &&
+    !achievements.includes("first_quiz")
+  ) {
+    unlockAchievement("first_quiz");
+  }
+
+  // Perfect Score
+  if (
+    Object.values(quizResults).some((result) => result.bestScore === 100) &&
+    !achievements.includes("perfect_score")
+  ) {
+    unlockAchievement("perfect_score");
+  }
+
+  // Quiz Master — passed every quiz that currently exists
+  const allQuizIds = Object.keys(quizzesData).map(Number);
+  const allQuizzesPassed = checkAllQuizzesPassed(quizResults, allQuizIds);
+
+  if (allQuizzesPassed && !achievements.includes("quiz_master")) {
+    unlockAchievement("quiz_master");
+  }
+
+  // Course Expert — passed every quiz with a 90%+ average score
+  if (
+    allQuizzesPassed &&
+    getAverageQuizScore(quizResults, allQuizIds) >= 90 &&
+    !achievements.includes("course_expert")
+  ) {
+    unlockAchievement("course_expert");
   }
 }

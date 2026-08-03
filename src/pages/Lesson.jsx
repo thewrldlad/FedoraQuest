@@ -3,7 +3,7 @@ import { useNavigate, useParams } from "react-router-dom";
 import lessons from "../data/lessons";
 import quizzes from "../data/quizzes";
 import lessonContent from "../data/lessonContent";
-import Quiz from "../components/Quiz/Quiz";
+import QuizPlayer from "../components/Quiz/QuizPlayer";
 import Button from "../components/Button/Button";
 import { useGame } from "../context/GameContext";
 import useCourseProgress from "../hooks/useCourseProgress";
@@ -43,8 +43,8 @@ const quiz = quizzes[lesson.id];
 const quizResult = quizResults[lesson.id];
 const content = lessonContent[lesson.id];
 
-const completeLesson = () => {
-  markLessonComplete(lesson.id);
+const completeLesson = (xpOverride = null) => {
+  markLessonComplete(lesson.id, xpOverride);
   navigate("/");
 };
 
@@ -53,22 +53,22 @@ const startQuiz = () => {
   setQuizActive(true);
 };
 
-const handleQuizComplete = (score, passed) => {
-  recordQuizResult(lesson.id, score, passed);
+const handleQuizComplete = (results) => {
+  recordQuizResult(lesson.id, results.percentage, results.passed);
   setQuizActive(false);
 
-  if (passed) {
-    completeLesson();
+  if (results.passed) {
+    completeLesson(results.xpEarned);
   }
 };
 
 const actionArea = quiz ? (
   <div className="mt-8">
     {quizActive ? (
-      <Quiz
+      <QuizPlayer
         key={quizKey}
-        questions={quiz.questions}
-        passingScore={quiz.passingScore}
+        quiz={quiz}
+        quizId={lesson.id}
         onComplete={handleQuizComplete}
       />
     ) : (
@@ -101,7 +101,7 @@ const actionArea = quiz ? (
   <div className="mt-8">
     <Button
       disabled={isCompleted}
-      onClick={completeLesson}
+      onClick={() => completeLesson()}
       variant={isCompleted ? "success" : "primary"}
     >
       {isCompleted ? "✓ Lesson Completed" : "Mark Lesson Complete"}
