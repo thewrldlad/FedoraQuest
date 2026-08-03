@@ -48,6 +48,8 @@ export default function Profile() {
   } = useProfile();
   const { achievements: achievementsWithState } = useAchievements();
   const [isEditing, setIsEditing] = useState(false);
+  const [isSaving, setIsSaving] = useState(false);
+  const [saveError, setSaveError] = useState("");
 
   const level = getLevelInfo(xp);
 
@@ -81,9 +83,22 @@ export default function Profile() {
     };
   });
 
-  const handleSaveProfile = (updatedProfile) => {
-    updateProfile(updatedProfile);
-    setIsEditing(false);
+  const handleSaveProfile = async (updatedProfile) => {
+    setIsSaving(true);
+    setSaveError("");
+
+    try {
+      await updateProfile(updatedProfile);
+      setIsEditing(false);
+    } catch (error) {
+      setSaveError(
+        error instanceof Error
+          ? error.message
+          : "We couldn't save your profile. Please try again."
+      );
+    } finally {
+      setIsSaving(false);
+    }
   };
 
   return (
@@ -92,9 +107,14 @@ export default function Profile() {
         <EditProfile
           profile={profile}
           onSave={handleSaveProfile}
-          onCancel={() => setIsEditing(false)}
+          onCancel={() => {
+            setSaveError("");
+            setIsEditing(false);
+          }}
           onUploadAvatar={uploadAvatar}
           onRemoveAvatar={removeAvatar}
+          isSaving={isSaving}
+          saveError={saveError}
         />
       ) : (
         <ProfileHeader

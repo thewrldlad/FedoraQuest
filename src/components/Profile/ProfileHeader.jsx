@@ -42,15 +42,17 @@ export default function ProfileHeader({
       />
 
       <div className="px-4 sm:px-8 pb-8">
-        <div className="flex flex-col sm:flex-row sm:items-end gap-5 -mt-14 sm:-mt-16">
-          <ProfileAvatar
-            value={profile.avatarUrl}
-            fallbackInitials={initials}
-            onUpload={onUploadAvatar}
-            onRemove={onRemoveAvatar}
-          />
+        <div className="flex flex-col sm:flex-row sm:items-start gap-5">
+          <div className="-mt-14 sm:-mt-16">
+            <ProfileAvatar
+              value={profile.avatarUrl}
+              fallbackInitials={initials}
+              onUpload={onUploadAvatar}
+              onRemove={onRemoveAvatar}
+            />
+          </div>
 
-          <div className="flex-1 flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4 min-w-0 sm:pb-2">
+          <div className="flex-1 flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4 min-w-0 mt-1 sm:mt-4">
             <UserIdentity
               profile={profile}
               xp={xp}

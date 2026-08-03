@@ -18,6 +18,8 @@ export default function EditProfile({
   onCancel,
   onUploadAvatar,
   onRemoveAvatar,
+  isSaving,
+  saveError,
 }) {
   const [formData, setFormData] = useState(profile);
 
@@ -172,11 +174,24 @@ export default function EditProfile({
         </p>
 
         <div className="flex gap-3">
-          <Button type="submit">Save Changes</Button>
-          <Button type="button" variant="secondary" onClick={onCancel}>
+          <Button type="submit" disabled={isSaving}>
+            {isSaving ? "Saving..." : "Save Changes"}
+          </Button>
+          <Button
+            type="button"
+            variant="secondary"
+            onClick={onCancel}
+            disabled={isSaving}
+          >
             Cancel
           </Button>
         </div>
+
+        {saveError && (
+          <p role="alert" className="text-sm text-red-400">
+            {saveError}
+          </p>
+        )}
       </form>
     </section>
   );
