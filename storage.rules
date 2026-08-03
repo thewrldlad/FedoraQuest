@@ -27,6 +27,12 @@ service firebase.storage {
       return request.resource.size < 5 * 1024 * 1024;
     }
 
+    // Banners are wide cover images, given a little more headroom than
+    // avatars — matches the client-side limit in ProfileBanner.jsx.
+    function underBannerSizeLimit() {
+      return request.resource.size < 8 * 1024 * 1024;
+    }
+
     // --- avatars/{uid}/avatar.<ext> ---
     // Anyone signed in can VIEW any avatar (they're shown on shared
     // pages like the admin Users list), but a user can only upload to
@@ -34,6 +40,13 @@ service firebase.storage {
     match /avatars/{uid}/{fileName} {
       allow read: if isSignedIn();
       allow write: if isSignedIn() && request.auth.uid == uid && isImage() && underSizeLimit();
+    }
+
+    // --- banners/{uid}/banner.<ext> ---
+    // Same ownership pattern as avatars above.
+    match /banners/{uid}/{fileName} {
+      allow read: if isSignedIn();
+      allow write: if isSignedIn() && request.auth.uid == uid && isImage() && underBannerSizeLimit();
     }
 
     // --- admin/logo.<ext>, admin/thumbnails/{file} ---

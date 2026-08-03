@@ -3,7 +3,9 @@ import { Link } from "react-router-dom";
 import { version } from "../../package.json";
 
 import { useGame } from "../context/GameContext";
+import useAuth from "../auth/useAuth";
 import useProfile from "../hooks/useProfile";
+import useAchievements from "../hooks/useAchievements";
 import { getLevelInfo } from "../utils/xpLevel";
 import lessons from "../data/lessons";
 import modules from "../data/modules";
@@ -35,7 +37,16 @@ export default function Profile() {
     firstSeenDate,
   } = useGame();
 
-  const { profile, updateProfile, uploadAvatar, removeAvatar } = useProfile();
+  const { user } = useAuth();
+  const {
+    profile,
+    updateProfile,
+    uploadAvatar,
+    removeAvatar,
+    uploadBanner,
+    removeBanner,
+  } = useProfile();
+  const { achievements: achievementsWithState } = useAchievements();
   const [isEditing, setIsEditing] = useState(false);
 
   const level = getLevelInfo(xp);
@@ -91,7 +102,15 @@ export default function Profile() {
           xp={xp}
           streak={streak}
           memberSince={firstSeenDate}
+          lastActiveAt={user?.lastLoginAt}
+          modulesCompleted={coursesCompleted}
+          totalModules={modules.length}
+          achievements={achievementsWithState}
           onEditClick={() => setIsEditing(true)}
+          onUploadAvatar={uploadAvatar}
+          onRemoveAvatar={removeAvatar}
+          onUploadBanner={uploadBanner}
+          onRemoveBanner={removeBanner}
         />
       )}
 

@@ -1,8 +1,8 @@
 import { useRef, useState } from "react";
 import { Camera } from "lucide-react";
 import Button from "../Button/Button";
+import { validateImageFile } from "../../utils/imageValidation";
 
-const ACCEPTED_TYPES = ["image/png", "image/jpeg", "image/webp"];
 const MAX_SIZE_BYTES = 5 * 1024 * 1024;
 
 // `onUpload(file)` is expected to resolve to a hosted download URL (it
@@ -34,13 +34,9 @@ export default function AvatarUploader({
 
     setError("");
 
-    if (!ACCEPTED_TYPES.includes(file.type)) {
-      setError("Please choose a PNG, JPG, or WEBP image.");
-      return;
-    }
-
-    if (file.size > MAX_SIZE_BYTES) {
-      setError("That image is too large — please choose a file under 5 MB.");
+    const validation = validateImageFile(file, { maxBytes: MAX_SIZE_BYTES });
+    if (!validation.valid) {
+      setError(validation.error);
       return;
     }
 

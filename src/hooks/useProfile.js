@@ -14,6 +14,8 @@ export const DEFAULT_PROFILE = {
   email: "",
   bio: "",
   avatarUrl: "",
+  bannerUrl: "",
+  country: "",
   learningLevel: "Linux Beginner",
 };
 
@@ -35,19 +37,23 @@ export default function useProfile() {
       email: user.email || "",
       bio: user.bio || "",
       avatarUrl: user.photoURL || "",
+      bannerUrl: user.bannerUrl || "",
+      country: user.country || "",
       learningLevel: user.learningLevel || DEFAULT_PROFILE.learningLevel,
     });
     setIsLoading(false);
   }, [user]);
 
-  // Avatar changes go through uploadAvatar/removeAvatar below (which
-  // touch Firebase Storage, not just the Firestore text fields) — this
-  // generic updater is for the rest of the profile form only.
+  // Avatar/banner changes go through uploadAvatar/removeAvatar/
+  // uploadBanner/removeBanner below (which touch Firebase Storage, not
+  // just Firestore text fields) — this generic updater is for the rest
+  // of the profile form only.
   const updateProfile = useCallback(
     async (updates) => {
       if (!user) return;
-      const { avatarUrl, ...rest } = updates;
+      const { avatarUrl, bannerUrl, ...rest } = updates;
       void avatarUrl;
+      void bannerUrl;
       await updateAccount(rest);
     },
     [user, updateAccount]
@@ -69,5 +75,29 @@ export default function useProfile() {
     setProfile((current) => ({ ...current, avatarUrl: "" }));
   }, [user]);
 
-  return { profile, updateProfile, uploadAvatar, removeAvatar, isLoading };
+  const uploadBanner = useCallback(
+    async (file) => {
+      if (!user) return null;
+      const url = await profileService.uploadBanner(user.uid, file);
+      setProfile((current) => ({ ...current, bannerUrl: url }));
+      return url;
+    },
+    [user]
+  );
+
+  const removeBanner = useCallback(async () => {
+    if (!user) return;
+    await profileService.deleteBanner(user.uid);
+    setProfile((current) => ({ ...current, bannerUrl: "" }));
+  }, [user]);
+
+  return {
+    profile,
+    updateProfile,
+    uploadAvatar,
+    removeAvatar,
+    uploadBanner,
+    removeBanner,
+    isLoading,
+  };
 }

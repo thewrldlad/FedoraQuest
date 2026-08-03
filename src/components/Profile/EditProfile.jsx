@@ -135,6 +135,23 @@ export default function EditProfile({
         <div>
           <label
             className="block text-sm text-fedora-muted mb-1"
+            htmlFor="country"
+          >
+            Country / Region
+          </label>
+          <input
+            id="country"
+            type="text"
+            value={formData.country}
+            onChange={handleChange("country")}
+            placeholder="e.g. Canada"
+            className={INPUT_CLASSES}
+          />
+        </div>
+
+        <div>
+          <label
+            className="block text-sm text-fedora-muted mb-1"
             htmlFor="bio"
           >
             Bio

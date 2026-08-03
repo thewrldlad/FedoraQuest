@@ -32,6 +32,8 @@ const USERS_COLLECTION = "users";
 export const DEFAULT_PROFILE_FIELDS = {
   bio: "",
   photoURL: "",
+  bannerUrl: "",
+  country: "",
   learningLevel: "Linux Beginner",
   role: "student",
   active: true,
@@ -144,4 +146,38 @@ export async function deleteAvatar(uid) {
   }
 
   await updateProfile(uid, { photoURL: "" });
+}
+
+// --- Banner / cover image (Firebase Storage) ---
+// Same fixed-path-overwrite pattern as the avatar above, in its own
+// `banners/{uid}/` folder so the two never collide in Storage or in
+// storage.rules.
+
+function bannerPath(uid, extension) {
+  return `banners/${uid}/banner.${extension}`;
+}
+
+export async function uploadBanner(uid, file) {
+  const path = bannerPath(uid, extensionFromMimeType(file.type));
+  const storageRef = ref(storage, path);
+
+  await uploadBytes(storageRef, file);
+  const downloadUrl = await getDownloadURL(storageRef);
+
+  await updateProfile(uid, { bannerUrl: downloadUrl });
+  return downloadUrl;
+}
+
+export async function deleteBanner(uid) {
+  const profile = await getProfile(uid);
+
+  if (profile?.bannerUrl) {
+    try {
+      await deleteObject(ref(storage, profile.bannerUrl));
+    } catch {
+      // Already gone, or the URL wasn't a Storage ref.
+    }
+  }
+
+  await updateProfile(uid, { bannerUrl: "" });
 }
