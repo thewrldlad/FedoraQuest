@@ -11,6 +11,7 @@ import Commands from "./pages/Commands";
 import Lesson from "./pages/Lesson";
 import Achievements from "./pages/Achievements";
 import Profile from "./pages/Profile";
+import Settings from "./pages/Settings";
 import Login from "./pages/Login";
 import Register from "./pages/Register";
 import ForgotPassword from "./pages/ForgotPassword";
@@ -69,6 +70,7 @@ function App() {
         <Route path="/commands" element={<Commands />} />
         <Route path="/achievements" element={<Achievements />} />
         <Route path="/profile" element={<Profile />} />
+        <Route path="/settings" element={<Settings />} />
       </Route>
     </Routes>
   );

@@ -5,6 +5,7 @@ import "./index.css";
 import App from "./App";
 import { GameProvider } from "./context/GameContext";
 import { AuthProvider } from "./auth/AuthProvider";
+import { SettingsProvider } from "./hooks/useSettings";
 import ErrorBoundary from "./components/ErrorBoundary/ErrorBoundary";
 
 ReactDOM.createRoot(document.getElementById("root")).render(
@@ -12,9 +13,11 @@ ReactDOM.createRoot(document.getElementById("root")).render(
     <ErrorBoundary>
       <BrowserRouter>
         <AuthProvider>
-          <GameProvider>
-            <App />
-          </GameProvider>
+          <SettingsProvider>
+            <GameProvider>
+              <App />
+            </GameProvider>
+          </SettingsProvider>
         </AuthProvider>
       </BrowserRouter>
     </ErrorBoundary>

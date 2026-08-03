@@ -73,10 +73,13 @@ export default function UserMenu({ collapsed }) {
             <Award size={16} /> Achievements
           </Link>
 
-          <div className="flex items-center gap-2 px-4 py-2 text-sm text-fedora-muted cursor-not-allowed">
+          <Link
+            to="/settings"
+            onClick={() => setOpen(false)}
+            className="flex items-center gap-2 px-4 py-2 text-sm text-fedora-text hover:bg-fedora-border transition-colors"
+          >
             <Settings size={16} /> Settings
-            <span className="text-xs">(soon)</span>
-          </div>
+          </Link>
 
           <div className="border-t border-fedora-border my-1" />
 

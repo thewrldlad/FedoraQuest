@@ -14,3 +14,24 @@
   --font-display: "Red Hat Display", sans-serif;
   --font-body: "Inter", sans-serif;
 }
+
+/* Alternate light palette, applied via the Settings page's Appearance
+   section. Purely additive — the default (dark, above) is unchanged. */
+:root[data-theme="light"] {
+  --color-fedora-bg: #f4f6fa;
+  --color-fedora-surface: #ffffff;
+  --color-fedora-border: #dde3ec;
+  --color-fedora-accent: #3c6eb4;
+  --color-fedora-accent-light: #2f5a94;
+  --color-fedora-text: #1c2b3a;
+  --color-fedora-muted: #5b6b7c;
+  --color-fedora-streak: #c96f1e;
+}
+
+/* Reduced motion preference, applied via the Settings page's
+   Accessibility section. */
+[data-reduced-motion="true"] * {
+  animation-duration: 0.01ms !important;
+  animation-iteration-count: 1 !important;
+  transition-duration: 0.01ms !important;
+}

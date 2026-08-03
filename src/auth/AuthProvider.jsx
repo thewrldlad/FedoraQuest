@@ -47,6 +47,18 @@ export function AuthProvider({ children }) {
     return authService.requestPasswordReset(email);
   };
 
+  const updateAccount = async (updates) => {
+    const updatedUser = await authService.updateAccount(user.id, updates);
+    setUser(updatedUser);
+    return updatedUser;
+  };
+
+  const changePassword = async (currentPassword, newPassword) => {
+    return authService.changePassword(user.id, currentPassword, newPassword);
+  };
+
+  const getSessionInfo = () => authService.getSessionInfo();
+
   return (
     <AuthContext.Provider
       value={{
@@ -56,6 +68,9 @@ export function AuthProvider({ children }) {
         register,
         logout,
         requestPasswordReset,
+        updateAccount,
+        changePassword,
+        getSessionInfo,
       }}
     >
       {children}

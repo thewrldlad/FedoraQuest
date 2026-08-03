@@ -60,15 +60,20 @@ function clearSession() {
 export async function login(email, password, rememberMe) {
   const users = getUsers();
   const normalizedEmail = email.trim().toLowerCase();
-  const user = users.find((u) => u.email.toLowerCase() === normalizedEmail);
+  const index = users.findIndex(
+    (u) => u.email.toLowerCase() === normalizedEmail
+  );
 
-  if (!user || user.password !== password) {
+  if (index === -1 || users[index].password !== password) {
     throw new Error("Invalid email or password.");
   }
 
+  users[index] = { ...users[index], lastLoginAt: new Date().toISOString() };
+  saveUsers(users);
+
   // Minimum required session data — just enough to look the user back up.
-  writeSession({ userId: user.id }, rememberMe);
-  return stripPassword(user);
+  writeSession({ userId: users[index].id }, rememberMe);
+  return stripPassword(users[index]);
 }
 
 export async function register(fullName, username, email, password) {
@@ -91,6 +96,7 @@ export async function register(fullName, username, email, password) {
     email: email.trim(),
     password,
     createdAt: new Date().toISOString(),
+    lastLoginAt: new Date().toISOString(),
   };
 
   saveUsers([...users, newUser]);
@@ -110,6 +116,68 @@ export async function getCurrentUser() {
   const users = getUsers();
   const user = users.find((u) => u.id === session.userId);
   return user ? stripPassword(user) : null;
+}
+
+export async function updateAccount(userId, updates) {
+  const users = getUsers();
+  const index = users.findIndex((u) => u.id === userId);
+
+  if (index === -1) {
+    throw new Error("User not found.");
+  }
+
+  const normalizedEmail = updates.email ? updates.email.trim().toLowerCase() : null;
+  const normalizedUsername = updates.username
+    ? updates.username.trim().toLowerCase()
+    : null;
+
+  if (
+    normalizedEmail &&
+    users.some((u, i) => i !== index && u.email.toLowerCase() === normalizedEmail)
+  ) {
+    throw new Error("An account with this email already exists.");
+  }
+
+  if (
+    normalizedUsername &&
+    users.some(
+      (u, i) => i !== index && u.username.toLowerCase() === normalizedUsername
+    )
+  ) {
+    throw new Error("This username is already taken.");
+  }
+
+  users[index] = { ...users[index], ...updates };
+  saveUsers(users);
+
+  return stripPassword(users[index]);
+}
+
+export async function changePassword(userId, currentPassword, newPassword) {
+  const users = getUsers();
+  const index = users.findIndex((u) => u.id === userId);
+
+  if (index === -1) {
+    throw new Error("User not found.");
+  }
+
+  if (users[index].password !== currentPassword) {
+    throw new Error("Current password is incorrect.");
+  }
+
+  users[index] = { ...users[index], password: newPassword };
+  saveUsers(users);
+
+  return { success: true };
+}
+
+// Not a Promise-returning "real" auth operation — pure introspection of
+// which storage the active session lives in.
+export function getSessionInfo() {
+  return {
+    active: readSession() !== null,
+    persistent: localStorage.getItem(SESSION_KEY) !== null,
+  };
 }
 
 export async function requestPasswordReset(email) {
