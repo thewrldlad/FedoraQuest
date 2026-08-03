@@ -1,54 +1,26 @@
 import Header from "../components/Header/Header";
-import LessonCard from "../components/LessonCard/LessonCard";
 import ProgressCard from "../components/ProgressCard/ProgressCard";
 import RoadmapCard from "../components/RoadmapCard/RoadmapCard";
 import XPCard from "../components/XPCard/XPCard";
-import lessons from "../data/lessons";
+import ContinueLearning from "../components/Progress/ContinueLearning";
+import useCourseProgress from "../hooks/useCourseProgress";
 
 import { useGame } from "../context/GameContext";
 
 export default function Dashboard() {
-  const {
-    completedLessons,
-    streak,
-  } = useGame();
-
-  const progress = Math.round(
-    (completedLessons.length / lessons.length) * 100
-  );
-
-  const nextLesson = lessons.find(
-    (lesson) => !completedLessons.includes(lesson.id)
-  );
+  const { streak } = useGame();
+  const progress = useCourseProgress();
 
   return (
     <>
       <Header />
 
-      {nextLesson ? (
-        <LessonCard
-          day={nextLesson.day}
-          title={nextLesson.title}
-          description={nextLesson.description}
-          buttonText="Continue Learning"
-          lessonId={nextLesson.id}
-        />
-      ) : (
-        <section className="bg-fedora-surface border border-fedora-border rounded-xl p-6">
-          <h2 className="text-2xl font-display text-fedora-text">
-            🎉 Course Complete!
-          </h2>
-
-          <p className="text-fedora-muted mt-3">
-            Congratulations! You've completed every lesson.
-          </p>
-        </section>
-      )}
+      <ContinueLearning progress={progress} />
 
       <section className="grid grid-cols-3 gap-4">
         <ProgressCard
           title="Progress"
-          value={`${progress}%`}
+          value={`${progress.courseCompletionPercent}%`}
           subtitle="Course completed"
         />
 

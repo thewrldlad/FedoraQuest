@@ -2,9 +2,13 @@ import { useState } from "react";
 import { Link } from "react-router-dom";
 import modules from "../data/modules";
 import { useGame } from "../context/GameContext";
+import useCourseProgress from "../hooks/useCourseProgress";
+import CourseProgressCard from "../components/Progress/CourseProgressCard";
+import CourseStats from "../components/Progress/CourseStats";
 
 export default function Course() {
   const { unlockedLessons, completedLessons } = useGame();
+  const progress = useCourseProgress();
   const [expandedModules, setExpandedModules] = useState([1]);
 
   return (
@@ -16,6 +20,13 @@ export default function Course() {
       <p className="text-fedora-muted mb-8">
         Follow the complete learning path from beginner to advanced.
       </p>
+
+      <CourseProgressCard
+        progress={progress}
+        onResetProgress={progress.resetProgress}
+      />
+
+      <CourseStats stats={progress.stats} />
 
       <div className="space-y-8">
         {modules.map((module) => (

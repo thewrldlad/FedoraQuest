@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { useNavigate, useParams } from "react-router-dom";
 import lessons from "../data/lessons";
 import quizzes from "../data/quizzes";
@@ -6,18 +6,13 @@ import lessonContent from "../data/lessonContent";
 import Quiz from "../components/Quiz/Quiz";
 import Button from "../components/Button/Button";
 import { useGame } from "../context/GameContext";
+import useCourseProgress from "../hooks/useCourseProgress";
 
 export default function Lesson() {
   const navigate = useNavigate();
   const { id } = useParams();
-  const {
-    addXP,
-    completedLessons,
-    setCompletedLessons,
-    setUnlockedLessons,
-    quizResults,
-    recordQuizResult,
-  } = useGame();
+  const { completedLessons, quizResults, recordQuizResult } = useGame();
+  const { markLessonComplete, markLessonOpened } = useCourseProgress();
 
   const [quizActive, setQuizActive] = useState(false);
   const [quizKey, setQuizKey] = useState(0);
@@ -25,6 +20,13 @@ export default function Lesson() {
 const lesson = lessons.find(
   (lesson) => lesson.id === Number(id)
 );
+
+useEffect(() => {
+  if (lesson) {
+    markLessonOpened(lesson.id);
+  }
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+}, [lesson?.id]);
 
 if (!lesson) {
   return (
@@ -42,28 +44,7 @@ const quizResult = quizResults[lesson.id];
 const content = lessonContent[lesson.id];
 
 const completeLesson = () => {
-  if (completedLessons.includes(lesson.id)) return;
-
-  addXP(100);
-  setCompletedLessons((current) => {
-    if (current.includes(lesson.id)) return current;
-    return [...current, lesson.id];
-  });
-
-  setUnlockedLessons((current) => {
-    const nextLessonId = lesson.id + 1;
-
-    if (!lessons.find((l) => l.id === nextLessonId)) {
-      return current;
-    }
-
-    if (current.includes(nextLessonId)) {
-      return current;
-    }
-
-    return [...current, nextLessonId];
-  });
-
+  markLessonComplete(lesson.id);
   navigate("/");
 };
 
