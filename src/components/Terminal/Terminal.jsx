@@ -4,9 +4,10 @@ import {
   runCommand,
   getCompletions,
   formatPath,
+  SUPPORTED_COMMANDS,
 } from "../../utils/terminalFileSystem";
 
-export default function Terminal({ exercise, onExerciseComplete }) {
+export default function Terminal({ exercise, onExerciseComplete, onCommandExecuted }) {
   const [fs, setFs] = useState(() => createInitialFileSystem());
   const [cwd, setCwd] = useState([]);
   const [lines, setLines] = useState([
@@ -42,6 +43,11 @@ export default function Terminal({ exercise, onExerciseComplete }) {
 
     const result = runCommand(fs, cwd, command);
     const promptLine = { type: "input", text: `${prompt} ${command}` };
+    const commandName = command.trim().split(/\s+/)[0];
+
+    if (onCommandExecuted && SUPPORTED_COMMANDS.includes(commandName)) {
+      onCommandExecuted(commandName);
+    }
 
     if (result.clearScreen) {
       setLines([]);

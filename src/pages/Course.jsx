@@ -3,12 +3,25 @@ import { Link } from "react-router-dom";
 import modules from "../data/modules";
 import { useGame } from "../context/GameContext";
 import useCourseProgress from "../hooks/useCourseProgress";
+import useProfile from "../hooks/useProfile";
+import useCertificates from "../hooks/useCertificates";
 import CourseProgressCard from "../components/Progress/CourseProgressCard";
 import CourseStats from "../components/Progress/CourseStats";
 
 export default function Course() {
   const { unlockedLessons, completedLessons } = useGame();
   const progress = useCourseProgress();
+  const { profile } = useProfile();
+
+  // Triggers certificate creation (+ bonus XP + notification) the moment
+  // the course is detected complete, regardless of whether the user ever
+  // visits the dedicated Certificates page.
+  useCertificates({
+    isCourseComplete: progress.isCourseComplete,
+    courseName: progress.courseTitle,
+    studentName: profile.fullName,
+  });
+
   const [expandedModules, setExpandedModules] = useState([1]);
 
   return (

@@ -1,10 +1,14 @@
 import modules from "../data/modules";
 import quizzesData from "../data/quizzes";
+import labCategories from "../data/labs";
 import { checkAllQuizzesPassed, getAverageQuizScore } from "../services/quizService";
+
+const TOTAL_LABS = labCategories.flatMap((category) => category.labs).length;
 
 export default function checkAchievements({
   xp,
   completedLessons,
+  completedLabs,
   achievements,
   unlockAchievement,
   streak,
@@ -119,5 +123,53 @@ export default function checkAchievements({
     !achievements.includes("course_expert")
   ) {
     unlockAchievement("course_expert");
+  }
+
+  // Earn 100 XP
+  if (xp >= 100 && !achievements.includes("xp_100")) {
+    unlockAchievement("xp_100");
+  }
+
+  // Fedora Champion — reach the maximum XP level
+  if (xp >= 5000 && !achievements.includes("xp_champion")) {
+    unlockAchievement("xp_champion");
+  }
+
+  // 3-day streak
+  if (streak >= 3 && !achievements.includes("streak_3")) {
+    unlockAchievement("streak_3");
+  }
+
+  // 100-day streak
+  if (streak >= 100 && !achievements.includes("streak_100")) {
+    unlockAchievement("streak_100");
+  }
+
+  // 10 quizzes passed
+  const quizzesPassedCount = Object.values(quizResults).filter(
+    (result) => result.passed
+  ).length;
+
+  if (quizzesPassedCount >= 10 && !achievements.includes("ten_quizzes_passed")) {
+    unlockAchievement("ten_quizzes_passed");
+  }
+
+  // First lab
+  if (completedLabs.length >= 1 && !achievements.includes("first_lab")) {
+    unlockAchievement("first_lab");
+  }
+
+  // 10 labs completed
+  if (completedLabs.length >= 10 && !achievements.includes("ten_labs")) {
+    unlockAchievement("ten_labs");
+  }
+
+  // Every lab completed
+  if (
+    TOTAL_LABS > 0 &&
+    completedLabs.length >= TOTAL_LABS &&
+    !achievements.includes("lab_expert")
+  ) {
+    unlockAchievement("lab_expert");
   }
 }

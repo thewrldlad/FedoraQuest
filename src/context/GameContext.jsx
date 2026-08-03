@@ -3,10 +3,14 @@ import {
   useContext,
   useEffect,
   useRef,
+  useState,
+  useCallback,
 } from "react";
 
 import checkAchievements from "../utils/checkAchievements";
 import usePersistedState from "../hooks/usePersistedState";
+import achievementsData from "../data/achievements";
+import * as achievementService from "../services/achievementService";
 
 const GameContext = createContext();
 
@@ -84,6 +88,22 @@ export function GameProvider({ children }) {
     }
   );
 
+  // Transient toast queue (not persisted — this is UI state, not data).
+  // Shown by AchievementNotification, mounted once at the app's root
+  // layout so it's visible regardless of which page triggered it.
+  const [notifications, setNotifications] = useState([]);
+
+  const pushNotification = useCallback((notification) => {
+    setNotifications((current) => [
+      ...current,
+      { id: crypto.randomUUID(), ...notification },
+    ]);
+  }, []);
+
+  const dismissNotification = useCallback((id) => {
+    setNotifications((current) => current.filter((n) => n.id !== id));
+  }, []);
+
   const previousLessonCount = useRef(completedLessons.length);
 
   // Update streak when a new lesson is completed
@@ -111,11 +131,27 @@ export function GameProvider({ children }) {
     setXp((currentXP) => currentXP + amount);
   };
 
-  // Achievement helper
+  // Achievement helper — awards the achievement's declared XP and records
+  // its unlock date exactly once, the first time it unlocks.
   const unlockAchievement = (id) => {
-    setAchievements((current) => {
-      if (current.includes(id)) return current;
-      return [...current, id];
+    if (achievements.includes(id)) return;
+
+    const achievement = achievementsData.find((a) => a.id === id);
+    const xpReward = achievement?.xpReward || 0;
+
+    setAchievements((current) =>
+      current.includes(id) ? current : [...current, id]
+    );
+    achievementService.recordUnlockDate(id);
+
+    if (xpReward > 0) {
+      addXP(xpReward);
+    }
+
+    pushNotification({
+      type: "achievement",
+      title: achievement?.title || id,
+      xpReward,
     });
   };
 
@@ -138,12 +174,13 @@ export function GameProvider({ children }) {
     checkAchievements({
       xp,
       completedLessons,
+      completedLabs,
       achievements,
       unlockAchievement,
       streak,
       quizResults,
     });
-  }, [xp, completedLessons, streak, quizResults]);
+  }, [xp, completedLessons, completedLabs, streak, quizResults]);
 
   return (
     <GameContext.Provider
@@ -172,6 +209,10 @@ export function GameProvider({ children }) {
         recordQuizResult,
 
         firstSeenDate,
+
+        notifications,
+        pushNotification,
+        dismissNotification,
       }}
     >
       {children}

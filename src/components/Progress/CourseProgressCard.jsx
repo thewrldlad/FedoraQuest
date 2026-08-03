@@ -101,9 +101,9 @@ export default function CourseProgressCard({ progress, onResetProgress }) {
           </p>
 
           <div className="flex flex-wrap justify-center items-center gap-4">
-            <Button disabled>
+            <Button as={Link} to="/certificates">
               <span className="flex items-center gap-2">
-                <Award size={16} /> Download Certificate (Coming Soon)
+                <Award size={16} /> View Certificate
               </span>
             </Button>
 

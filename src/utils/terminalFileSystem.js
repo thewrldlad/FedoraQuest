@@ -393,6 +393,8 @@ const commandHandlers = {
   }),
 };
 
+export const SUPPORTED_COMMANDS = Object.keys(commandHandlers);
+
 export function runCommand(fs, cwd, rawInput) {
   const tokens = tokenize(rawInput);
 

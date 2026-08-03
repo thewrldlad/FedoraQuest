@@ -1,6 +1,6 @@
 import { useState, useRef, useEffect } from "react";
 import { Link, useNavigate } from "react-router-dom";
-import { User, BookOpen, Award, Settings, LogOut } from "lucide-react";
+import { User, BookOpen, Award, GraduationCap, Settings, LogOut } from "lucide-react";
 import useAuth from "../../auth/useAuth";
 
 export default function UserMenu({ collapsed }) {
@@ -71,6 +71,14 @@ export default function UserMenu({ collapsed }) {
             className="flex items-center gap-2 px-4 py-2 text-sm text-fedora-text hover:bg-fedora-border transition-colors"
           >
             <Award size={16} /> Achievements
+          </Link>
+
+          <Link
+            to="/certificates"
+            onClick={() => setOpen(false)}
+            className="flex items-center gap-2 px-4 py-2 text-sm text-fedora-text hover:bg-fedora-border transition-colors"
+          >
+            <GraduationCap size={16} /> Certificates
           </Link>
 
           <Link

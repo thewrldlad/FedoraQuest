@@ -6,6 +6,7 @@ import terminalExercises from "../data/terminalExercises";
 import Terminal from "../components/Terminal/Terminal";
 import Button from "../components/Button/Button";
 import { useGame } from "../context/GameContext";
+import * as achievementService from "../services/achievementService";
 
 export default function Labs() {
   const {
@@ -14,7 +15,22 @@ export default function Labs() {
     unlockedLabs,
     setUnlockedLabs,
     addXP,
+    achievements,
+    unlockAchievement,
   } = useGame();
+
+  const handleCommandExecuted = (commandName) => {
+    const totalCommands = achievementService.incrementCommandsExecuted();
+    const uniqueUsed = achievementService.recordCommandUsed(commandName);
+
+    if (totalCommands >= 100 && !achievements.includes("hundred_commands")) {
+      unlockAchievement("hundred_commands");
+    }
+
+    if (uniqueUsed.length >= 12 && !achievements.includes("terminal_expert")) {
+      unlockAchievement("terminal_expert");
+    }
+  };
 
   const [expandedCategories, setExpandedCategories] = useState([1]);
   const [activeLabId, setActiveLabId] = useState(null);
@@ -174,6 +190,7 @@ export default function Labs() {
                                 <Terminal
                                   exercise={terminalExercises[lab.id]}
                                   onExerciseComplete={() => completeLab(lab)}
+                                  onCommandExecuted={handleCommandExecuted}
                                 />
                               </>
                             ) : (
