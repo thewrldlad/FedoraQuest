@@ -12,7 +12,13 @@ const LEARNING_LEVELS = [
 const INPUT_CLASSES =
   "w-full bg-fedora-bg border border-fedora-border rounded-lg px-3 py-2 text-fedora-text focus:outline-none focus:border-fedora-accent";
 
-export default function EditProfile({ profile, onSave, onCancel }) {
+export default function EditProfile({
+  profile,
+  onSave,
+  onCancel,
+  onUploadAvatar,
+  onRemoveAvatar,
+}) {
   const [formData, setFormData] = useState(profile);
 
   const handleChange = (field) => (event) => {
@@ -48,6 +54,8 @@ export default function EditProfile({ profile, onSave, onCancel }) {
             value={formData.avatarUrl}
             fallbackInitials={initials}
             onChange={handleAvatarChange}
+            onUpload={onUploadAvatar}
+            onRemove={onRemoveAvatar}
           />
         </div>
 
@@ -142,8 +150,8 @@ export default function EditProfile({ profile, onSave, onCancel }) {
         </div>
 
         <p className="text-fedora-muted text-xs">
-          Your profile is saved locally in this browser only — there's no
-          account system yet.
+          Your profile is saved to your account and available on any
+          device you log in from.
         </p>
 
         <div className="flex gap-3">

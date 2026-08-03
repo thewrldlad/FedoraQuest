@@ -20,7 +20,7 @@ const EMPTY_FORM = {
 };
 
 export default function AdminCourses() {
-  const { courses } = useAdmin();
+  const { courses, uploadCourseThumbnail } = useAdmin();
   const { searchTerm: globalSearch } = useOutletContext();
 
   const [localSearch, setLocalSearch] = useState("");
@@ -49,15 +49,13 @@ export default function AdminCourses() {
     setModalMode("edit");
   };
 
-  const handleThumbnailChange = (event) => {
+  const handleThumbnailChange = async (event) => {
     const file = event.target.files?.[0];
+    event.target.value = "";
     if (!file) return;
 
-    const reader = new FileReader();
-    reader.onload = () => {
-      setFormData((current) => ({ ...current, thumbnailUrl: reader.result }));
-    };
-    reader.readAsDataURL(file);
+    const thumbnailUrl = await uploadCourseThumbnail(file);
+    setFormData((current) => ({ ...current, thumbnailUrl }));
   };
 
   const handleSubmit = (event) => {

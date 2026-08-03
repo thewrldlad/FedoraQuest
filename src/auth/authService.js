@@ -1,239 +1,267 @@
 // ALL authentication logic lives here, and this is the ONLY file that
-// touches localStorage/sessionStorage for auth data. To migrate to
-// Firebase Authentication or Supabase Auth later, replace the internals
-// of these functions with real SDK calls — every function already
-// returns a Promise, and AuthProvider only ever calls these functions,
-// so no other file needs to change.
-//
-// IMPORTANT: this is a local, offline mock with no backend. Passwords
-// are stored in plain text in localStorage purely to simulate a user
-// database in the browser. This is NOT secure and must never be treated
-// as real security — password hashing/salting belongs server-side, once
-// a real backend exists.
+// calls the Firebase Authentication SDK directly. profileService.js
+// owns the matching Firestore users/{uid} document; progressService.js
+// owns the matching progress/{uid} document — both get created here,
+// once, at registration. AuthProvider only ever calls these functions,
+// so no other file needs to know Firebase Authentication exists.
 
-const USERS_KEY = "fedoraquest_users";
-const SESSION_KEY = "fedoraquest_session";
+import {
+  createUserWithEmailAndPassword,
+  signInWithEmailAndPassword,
+  signOut,
+  onAuthStateChanged,
+  sendPasswordResetEmail,
+  updateEmail,
+  updatePassword,
+  updateProfile as updateAuthProfile,
+  reauthenticateWithCredential,
+  EmailAuthProvider,
+  setPersistence,
+  browserLocalPersistence,
+  browserSessionPersistence,
+} from "firebase/auth";
+import { auth } from "../firebase/firebase";
+import * as profileService from "../services/profileService";
+import * as progressService from "../services/progressService";
 
-function getUsers() {
-  const saved = localStorage.getItem(USERS_KEY);
-  return saved ? JSON.parse(saved) : [];
-}
+const REMEMBER_ME_KEY = "fedoraquest_remember_me";
 
-function saveUsers(users) {
-  localStorage.setItem(USERS_KEY, JSON.stringify(users));
-}
+function friendlyAuthError(error) {
+  const code = error?.code || "";
 
-function stripPassword(user) {
-  const { password, ...safeUser } = user;
-  void password;
-  // Defaults for accounts created before role/active existed.
-  return { role: "student", active: true, ...safeUser };
-}
-
-function readSession() {
-  const local = localStorage.getItem(SESSION_KEY);
-  if (local) return JSON.parse(local);
-
-  const session = sessionStorage.getItem(SESSION_KEY);
-  return session ? JSON.parse(session) : null;
-}
-
-// "Remember Me" maps to a real storage distinction: checked sessions go
-// in localStorage (survive closing the browser), unchecked sessions go
-// in sessionStorage (cleared when the tab/browser closes).
-function writeSession(session, rememberMe) {
-  localStorage.removeItem(SESSION_KEY);
-  sessionStorage.removeItem(SESSION_KEY);
-
-  const payload = JSON.stringify(session);
-  if (rememberMe) {
-    localStorage.setItem(SESSION_KEY, payload);
-  } else {
-    sessionStorage.setItem(SESSION_KEY, payload);
+  switch (code) {
+    case "auth/invalid-email":
+      return "Enter a valid email address.";
+    case "auth/user-disabled":
+      return "This account has been deactivated.";
+    case "auth/user-not-found":
+    case "auth/wrong-password":
+    case "auth/invalid-credential":
+      return "Invalid email or password.";
+    case "auth/email-already-in-use":
+      return "An account with this email already exists.";
+    case "auth/weak-password":
+      return "Password must be at least 6 characters.";
+    case "auth/too-many-requests":
+      return "Too many attempts. Please wait a moment and try again.";
+    case "auth/network-request-failed":
+      return "Network error — check your connection and try again.";
+    case "auth/requires-recent-login":
+      return "Please log out and back in, then try again.";
+    default:
+      return error?.message || "Something went wrong. Please try again.";
   }
 }
 
-function clearSession() {
-  localStorage.removeItem(SESSION_KEY);
-  sessionStorage.removeItem(SESSION_KEY);
+async function buildUserFromFirebaseUser(firebaseUser) {
+  const profile = await profileService.getProfile(firebaseUser.uid);
+  return {
+    id: firebaseUser.uid,
+    uid: firebaseUser.uid,
+    email: firebaseUser.email,
+    ...profile,
+  };
 }
 
 export async function login(email, password, rememberMe) {
-  const users = getUsers();
-  const normalizedEmail = email.trim().toLowerCase();
-  const index = users.findIndex(
-    (u) => u.email.toLowerCase() === normalizedEmail
-  );
+  try {
+    await setPersistence(
+      auth,
+      rememberMe ? browserLocalPersistence : browserSessionPersistence
+    );
 
-  if (index === -1 || users[index].password !== password) {
-    throw new Error("Invalid email or password.");
+    const credential = await signInWithEmailAndPassword(
+      auth,
+      email.trim(),
+      password
+    );
+
+    const profile = await profileService.getProfile(credential.user.uid);
+
+    if (profile?.active === false) {
+      await signOut(auth);
+      throw new Error("This account has been deactivated.");
+    }
+
+    localStorage.setItem(REMEMBER_ME_KEY, String(Boolean(rememberMe)));
+
+    await profileService.updateProfile(credential.user.uid, {
+      lastLoginAt: new Date().toISOString(),
+    });
+
+    return buildUserFromFirebaseUser(credential.user);
+  } catch (error) {
+    if (error.message === "This account has been deactivated.") throw error;
+    throw new Error(friendlyAuthError(error));
   }
-
-  if (users[index].active === false) {
-    throw new Error("This account has been deactivated.");
-  }
-
-  users[index] = { ...users[index], lastLoginAt: new Date().toISOString() };
-  saveUsers(users);
-
-  // Minimum required session data — just enough to look the user back up.
-  writeSession({ userId: users[index].id }, rememberMe);
-  return stripPassword(users[index]);
 }
 
 export async function register(fullName, username, email, password) {
-  const users = getUsers();
-  const normalizedEmail = email.trim().toLowerCase();
   const normalizedUsername = username.trim().toLowerCase();
 
-  if (users.some((u) => u.email.toLowerCase() === normalizedEmail)) {
-    throw new Error("An account with this email already exists.");
-  }
-
-  if (users.some((u) => u.username.toLowerCase() === normalizedUsername)) {
+  const usernameTaken = await profileService.isUsernameTaken(normalizedUsername);
+  if (usernameTaken) {
     throw new Error("This username is already taken.");
   }
 
-  // Bootstrap: the first account ever registered becomes admin (there's
-  // no backend to seed one otherwise). Every account after the first
-  // admin defaults to student.
-  const hasAdmin = users.some((u) => u.role === "admin");
+  let credential;
+  try {
+    credential = await createUserWithEmailAndPassword(
+      auth,
+      email.trim(),
+      password
+    );
+  } catch (error) {
+    throw new Error(friendlyAuthError(error));
+  }
 
-  const newUser = {
-    id: crypto.randomUUID(),
+  await updateAuthProfile(credential.user, { displayName: fullName.trim() });
+
+  // Bootstrap: the first account ever registered becomes admin — there's
+  // no backend seeding step otherwise. Every account after the first
+  // admin defaults to student. Best-effort only (same limitation the
+  // local mock had): two people registering in the same instant could
+  // theoretically both read "no admin yet".
+  const hasAdmin = await profileService.hasAdminUser();
+
+  await profileService.createProfileDocument(credential.user.uid, {
     fullName: fullName.trim(),
     username: username.trim(),
     email: email.trim(),
-    password,
     role: hasAdmin ? "student" : "admin",
     active: true,
-    createdAt: new Date().toISOString(),
     lastLoginAt: new Date().toISOString(),
-  };
+  });
 
-  saveUsers([...users, newUser]);
-  writeSession({ userId: newUser.id }, true);
+  await progressService.createProgressDocument(credential.user.uid);
 
-  return stripPassword(newUser);
+  localStorage.setItem(REMEMBER_ME_KEY, "true");
+
+  return buildUserFromFirebaseUser(credential.user);
 }
 
 export async function logout() {
-  clearSession();
+  await signOut(auth);
 }
 
-export async function getCurrentUser() {
-  const session = readSession();
-  if (!session) return null;
+// Real-time subscription — replaces the old one-shot getCurrentUser()
+// call. AuthProvider calls this once and keeps `user` in sync
+// automatically, which is how Firebase Authentication is meant to be
+// consumed (rather than polled).
+export function onAuthStateChange(callback) {
+  return onAuthStateChanged(auth, async (firebaseUser) => {
+    if (!firebaseUser) {
+      callback(null);
+      return;
+    }
 
-  const users = getUsers();
-  const user = users.find((u) => u.id === session.userId);
-  return user ? stripPassword(user) : null;
+    try {
+      callback(await buildUserFromFirebaseUser(firebaseUser));
+    } catch {
+      callback(null);
+    }
+  });
+}
+
+// One-shot lookup kept for any caller that needs it outside the
+// listener — AuthProvider no longer uses this itself, but the exported
+// shape stays available.
+export async function getCurrentUser() {
+  if (!auth.currentUser) return null;
+  return buildUserFromFirebaseUser(auth.currentUser);
 }
 
 export async function updateAccount(userId, updates) {
-  const users = getUsers();
-  const index = users.findIndex((u) => u.id === userId);
+  const { email, ...profileUpdates } = updates;
 
-  if (index === -1) {
-    throw new Error("User not found.");
+  if (profileUpdates.username) {
+    const normalized = profileUpdates.username.trim().toLowerCase();
+    const taken = await profileService.isUsernameTaken(normalized, userId);
+    if (taken) throw new Error("This username is already taken.");
   }
 
-  const normalizedEmail = updates.email ? updates.email.trim().toLowerCase() : null;
-  const normalizedUsername = updates.username
-    ? updates.username.trim().toLowerCase()
-    : null;
-
-  if (
-    normalizedEmail &&
-    users.some((u, i) => i !== index && u.email.toLowerCase() === normalizedEmail)
-  ) {
-    throw new Error("An account with this email already exists.");
+  if (email && auth.currentUser && email.trim() !== auth.currentUser.email) {
+    try {
+      await updateEmail(auth.currentUser, email.trim());
+    } catch (error) {
+      throw new Error(friendlyAuthError(error));
+    }
   }
 
-  if (
-    normalizedUsername &&
-    users.some(
-      (u, i) => i !== index && u.username.toLowerCase() === normalizedUsername
-    )
-  ) {
-    throw new Error("This username is already taken.");
+  if (profileUpdates.fullName && auth.currentUser?.uid === userId) {
+    await updateAuthProfile(auth.currentUser, {
+      displayName: profileUpdates.fullName.trim(),
+    });
   }
 
-  users[index] = { ...users[index], ...updates };
-  saveUsers(users);
+  const updated = await profileService.updateProfile(userId, {
+    ...profileUpdates,
+    ...(email ? { email: email.trim() } : {}),
+  });
 
-  return stripPassword(users[index]);
+  return {
+    id: userId,
+    uid: userId,
+    email: auth.currentUser?.uid === userId ? auth.currentUser.email : updated.email,
+    ...updated,
+  };
 }
 
-export async function changePassword(userId, currentPassword, newPassword) {
-  const users = getUsers();
-  const index = users.findIndex((u) => u.id === userId);
+export async function changePassword(currentPassword, newPassword) {
+  const user = auth.currentUser;
+  if (!user) throw new Error("You must be logged in.");
 
-  if (index === -1) {
-    throw new Error("User not found.");
+  try {
+    const credential = EmailAuthProvider.credential(user.email, currentPassword);
+    await reauthenticateWithCredential(user, credential);
+    await updatePassword(user, newPassword);
+    return { success: true };
+  } catch (error) {
+    if (
+      error.code === "auth/wrong-password" ||
+      error.code === "auth/invalid-credential"
+    ) {
+      throw new Error("Current password is incorrect.");
+    }
+    throw new Error(friendlyAuthError(error));
   }
-
-  if (users[index].password !== currentPassword) {
-    throw new Error("Current password is incorrect.");
-  }
-
-  users[index] = { ...users[index], password: newPassword };
-  saveUsers(users);
-
-  return { success: true };
 }
 
 // --- Admin-facing operations ---
 
 export async function getAllUsers() {
-  return getUsers().map(stripPassword);
+  return profileService.getAllProfiles();
 }
 
 export async function updateUserRole(userId, role) {
-  const users = getUsers();
-  const index = users.findIndex((u) => u.id === userId);
-
-  if (index === -1) {
-    throw new Error("User not found.");
-  }
-
-  users[index] = { ...users[index], role };
-  saveUsers(users);
-  return stripPassword(users[index]);
+  return profileService.updateProfile(userId, { role });
 }
 
 export async function setUserActive(userId, active) {
-  const users = getUsers();
-  const index = users.findIndex((u) => u.id === userId);
-
-  if (index === -1) {
-    throw new Error("User not found.");
-  }
-
-  users[index] = { ...users[index], active };
-  saveUsers(users);
-  return stripPassword(users[index]);
+  return profileService.updateProfile(userId, { active });
 }
 
-// Not a Promise-returning "real" auth operation — pure introspection of
-// which storage the active session lives in.
+// The Firebase Auth SDK has no public API to read back which
+// persistence mode is currently active, so "remembered on this device"
+// is tracked locally alongside login/register — this is bookkeeping,
+// not a security-relevant value, so a plain localStorage flag is fine.
 export function getSessionInfo() {
   return {
-    active: readSession() !== null,
-    persistent: localStorage.getItem(SESSION_KEY) !== null,
+    active: auth.currentUser !== null,
+    persistent: localStorage.getItem(REMEMBER_ME_KEY) === "true",
   };
 }
 
 export async function requestPasswordReset(email) {
-  const users = getUsers();
-  const normalizedEmail = email.trim().toLowerCase();
-
-  // Intentionally doesn't reveal whether the account exists — matches
-  // real password-reset UX, and gives this stub the same external
-  // behavior a real Firebase/Supabase call would have.
-  const exists = users.some((u) => u.email.toLowerCase() === normalizedEmail);
-  void exists;
-
+  try {
+    await sendPasswordResetEmail(auth, email.trim());
+  } catch (error) {
+    // Don't reveal whether the account exists — matches real
+    // password-reset UX — but real network/config errors still surface.
+    if (error.code !== "auth/user-not-found") {
+      throw new Error(friendlyAuthError(error));
+    }
+  }
   return { success: true };
 }
 

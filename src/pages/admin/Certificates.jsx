@@ -1,18 +1,24 @@
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import useAdmin from "../../hooks/useAdmin";
 import useToast from "../../hooks/useToast";
-import * as certificateService from "../../services/certificateService";
 import DataTable from "../../components/Admin/DataTable";
 import ConfirmDialog from "../../components/ConfirmDialog/ConfirmDialog";
 import Toast from "../../components/Settings/Toast";
 import Button from "../../components/Button/Button";
 
 export default function AdminCertificates() {
-  const { certificateTemplate, editCertificateTemplate } = useAdmin();
+  const {
+    certificates,
+    refreshCertificates,
+    certificateTemplate,
+    editCertificateTemplate,
+  } = useAdmin();
   const { toast, showToast } = useToast();
   const [regenerateTarget, setRegenerateTarget] = useState(null);
 
-  const certificates = certificateService.getCertificates();
+  useEffect(() => {
+    refreshCertificates();
+  }, [refreshCertificates]);
 
   const handleTemplateChange = (field) => (event) => {
     editCertificateTemplate({ [field]: event.target.value });

@@ -21,9 +21,10 @@ export default function Certificates() {
   const [verifyId, setVerifyId] = useState("");
   const [verifyResult, setVerifyResult] = useState(null);
 
-  const handleVerify = (event) => {
+  const handleVerify = async (event) => {
     event.preventDefault();
-    setVerifyResult(verifyCertificateId(verifyId));
+    const result = await verifyCertificateId(verifyId);
+    setVerifyResult(result);
   };
 
   if (selected) {

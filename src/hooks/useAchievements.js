@@ -1,19 +1,26 @@
 import { useGame } from "../context/GameContext";
 import achievementsData from "../data/achievements";
 import * as achievementService from "../services/achievementService";
-import { getQuestionsAnswered } from "../services/quizService";
 
-// Aggregates achievement display data from GameContext (unlock state,
-// already persisted there) plus achievementService (unlock dates, command
-// tracking) and quizService (questions answered — tracked there for the
-// quiz system, reused here for the "Centurion" achievement's progress bar).
+// Aggregates achievement display data entirely from GameContext's single
+// real-time progress/{uid} listener — unlock state, unlock dates,
+// command/question tracking all live on that one document now, so no
+// separate Firestore read happens here (previously achievementService
+// and quizService each did their own synchronous localStorage read).
 export default function useAchievements() {
-  const { achievements, xp, streak, completedLessons, completedLabs, quizResults } =
-    useGame();
+  const {
+    achievements,
+    xp,
+    streak,
+    completedLessons,
+    completedLabs,
+    quizResults,
+    achievementUnlockDates,
+    commandsExecuted,
+    uniqueCommandsUsed,
+    questionsAnswered,
+  } = useGame();
 
-  const unlockDates = achievementService.getUnlockDates();
-  const commandsExecuted = achievementService.getCommandsExecuted();
-  const uniqueCommandsUsed = achievementService.getUniqueCommandsUsed();
   const quizzesPassedCount = Object.values(quizResults).filter(
     (result) => result.passed
   ).length;
@@ -24,7 +31,7 @@ export default function useAchievements() {
     completedLessonsCount: completedLessons.length,
     completedLabsCount: completedLabs.length,
     quizzesPassedCount,
-    questionsAnsweredCount: getQuestionsAnswered(),
+    questionsAnsweredCount: questionsAnswered,
     commandsExecutedCount: commandsExecuted,
     uniqueCommandsUsedCount: uniqueCommandsUsed.length,
   };
@@ -35,7 +42,7 @@ export default function useAchievements() {
     return {
       ...achievement,
       unlocked,
-      unlockedAt: unlockDates[achievement.id] || null,
+      unlockedAt: achievementUnlockDates[achievement.id] || null,
       progress: unlocked
         ? null
         : achievementService.getAchievementProgress(achievement, stats),

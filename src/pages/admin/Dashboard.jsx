@@ -11,19 +11,20 @@ import {
 } from "lucide-react";
 import { useGame } from "../../context/GameContext";
 import useAdmin from "../../hooks/useAdmin";
-import * as certificateService from "../../services/certificateService";
 import StatCard from "../../components/StatCard/StatCard";
 
 export default function AdminDashboard() {
   const { xp, achievements } = useGame();
-  const { users, refreshUsers, courses, lessons, quizzes } = useAdmin();
+  const { users, refreshUsers, certificates, refreshCertificates, courses, lessons, quizzes } =
+    useAdmin();
 
   useEffect(() => {
     refreshUsers();
-  }, [refreshUsers]);
+    refreshCertificates();
+  }, [refreshUsers, refreshCertificates]);
 
   const activeUsers = users.filter((user) => user.active !== false).length;
-  const certificatesIssued = certificateService.getCertificates().length;
+  const certificatesIssued = certificates.length;
 
   return (
     <div>
@@ -61,13 +62,13 @@ export default function AdminDashboard() {
           icon={Award}
           title="Achievements Earned"
           value={achievements.length}
-          subtitle="This browser session"
+          subtitle="Your account only"
         />
         <StatCard
           icon={Trophy}
           title="Total XP Awarded"
           value={xp.toLocaleString()}
-          subtitle="This browser session"
+          subtitle="Your account only"
         />
       </div>
 
@@ -84,10 +85,11 @@ export default function AdminDashboard() {
           </Link>
         </div>
         <p className="text-fedora-muted text-sm">
-          "Achievements Earned" and "Total XP Awarded" reflect this browser's
-          active session only — FedoraQuest doesn't yet store progress
-          per-user, so a true cross-user total isn't available until a real
-          backend exists.
+          "Achievements Earned" and "Total XP Awarded" reflect your own
+          admin account's progress only — a true cross-user total needs
+          a Firestore aggregation query (or a Cloud Function that keeps a
+          running total) reading every user's progress document, which
+          is future work beyond this migration.
         </p>
       </section>
     </div>

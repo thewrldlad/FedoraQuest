@@ -1,4 +1,3 @@
-import { useState, useEffect } from "react";
 import { useGame } from "../context/GameContext";
 import modules from "../data/modules";
 import lessons from "../data/lessons";
@@ -9,14 +8,15 @@ const COURSE_TITLE = "Master Fedora Linux";
 // used to extrapolate a rough remaining-time figure, not exact.
 const AVERAGE_MINUTES_PER_LESSON = 45;
 
-// Aggregates course-wide progress from GameContext (the single source of
-// truth for lesson/lab completion, XP, and streak) plus the two genuinely
-// new pieces of state this feature needs (last opened lesson, longest
-// streak). Only one page ever renders at a time (Dashboard/Course/Lesson
-// are separate routes), so per-call-site local state for those two
-// values never goes out of sync with what's on screen.
+// Aggregates course-wide progress from GameContext — the single source
+// of truth (backed by the progress/{uid} Firestore document and its one
+// real-time listener) for lesson/lab completion, XP, streak, last
+// opened lesson, and longest streak alike. This hook no longer keeps any
+// state of its own; it's a pure derived-data + action layer over
+// GameContext.
 export default function useCourseProgress() {
   const {
+    uid,
     xp,
     addXP,
     streak,
@@ -25,27 +25,13 @@ export default function useCourseProgress() {
     unlockedLessons,
     setUnlockedLessons,
     achievements,
+    lastOpenedLessonId,
+    longestStreak,
   } = useGame();
 
-  const [lastOpenedLessonId, setLastOpenedLessonIdState] = useState(() =>
-    progressService.getLastOpenedLessonId()
-  );
-
-  const [longestStreak, setLongestStreakState] = useState(() =>
-    progressService.getLongestStreak()
-  );
-
-  // Keep longest streak in sync whenever the real current streak grows.
-  useEffect(() => {
-    if (streak > longestStreak) {
-      setLongestStreakState(streak);
-      progressService.saveLongestStreak(streak);
-    }
-  }, [streak, longestStreak]);
-
   const markLessonOpened = (lessonId) => {
-    setLastOpenedLessonIdState(lessonId);
-    progressService.saveLastOpenedLessonId(lessonId);
+    if (!uid) return;
+    progressService.updateProgress(uid, { lastOpenedLessonId: lessonId });
   };
 
   // Centralizes "complete a lesson" (previously duplicated inline in
@@ -79,9 +65,7 @@ export default function useCourseProgress() {
   const resetProgress = () => {
     setCompletedLessons([]);
     setUnlockedLessons([1]);
-    progressService.resetProgressExtras();
-    setLastOpenedLessonIdState(null);
-    setLongestStreakState(0);
+    if (uid) progressService.resetProgressExtras(uid);
   };
 
   // --- Derived data ---

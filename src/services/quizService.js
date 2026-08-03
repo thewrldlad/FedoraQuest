@@ -1,48 +1,49 @@
-// Dedicated quiz domain logic: the only file that touches localStorage
-// for quiz history/questions-answered, plus grading, XP calculation, and
-// answer-formatting helpers shared by the quiz player and review screen.
-// To connect this to Firebase/Supabase later, replace the storage
-// functions' internals — useQuiz.js and every component that calls this
-// service stay unchanged.
+// Dedicated quiz domain logic: the only file that touches Cloud
+// Firestore for quiz attempt history, plus grading, XP calculation, and
+// answer-formatting helpers shared by the quiz player and review screen
+// (all pure, unchanged by the Firebase migration). Attempt history lives
+// in a progress/{uid}/quizAttempts subcollection — kept separate from
+// the summary quizResults map (owned by progressService, part of
+// GameContext's single real-time listener) since history only ever
+// grows and doesn't need to be part of that listener.
+// questionsAnswered is a running-total field on the shared progress/{uid}
+// document instead — see progressService.js.
 
-const QUIZ_HISTORY_KEY = "fedoraquest_quizHistory";
-const QUESTIONS_ANSWERED_KEY = "fedoraquest_questionsAnswered";
+import {
+  collection,
+  addDoc,
+  getDocs,
+  query,
+  where,
+  serverTimestamp,
+  increment,
+} from "firebase/firestore";
+import { progressDocRef, updateProgress } from "./progressService";
 
 const DIFFICULTY_MULTIPLIER = { beginner: 1, intermediate: 1.25, advanced: 1.5 };
 const XP_PER_QUESTION = 10;
 export const DEFAULT_PASSING_SCORE = 70;
 
-export function getQuizHistory() {
-  const saved = localStorage.getItem(QUIZ_HISTORY_KEY);
-  return saved ? JSON.parse(saved) : {};
+function quizAttemptsRef(uid) {
+  return collection(progressDocRef(uid), "quizAttempts");
 }
 
-function saveQuizHistory(history) {
-  localStorage.setItem(QUIZ_HISTORY_KEY, JSON.stringify(history));
+export async function addQuizAttempt(uid, quizId, attempt) {
+  await addDoc(quizAttemptsRef(uid), {
+    quizId,
+    ...attempt,
+    recordedAt: serverTimestamp(),
+  });
 }
 
-export function addQuizAttempt(quizId, attempt) {
-  const history = getQuizHistory();
-  const attempts = history[quizId] || [];
-  const updated = { ...history, [quizId]: [...attempts, attempt] };
-  saveQuizHistory(updated);
-  return updated;
+export async function getQuizHistory(uid, quizId) {
+  const historyQuery = query(quizAttemptsRef(uid), where("quizId", "==", quizId));
+  const snapshot = await getDocs(historyQuery);
+  return snapshot.docs.map((docSnap) => ({ id: docSnap.id, ...docSnap.data() }));
 }
 
-export function getQuestionsAnswered() {
-  const saved = localStorage.getItem(QUESTIONS_ANSWERED_KEY);
-  return saved ? Number(saved) : 0;
-}
-
-export function addQuestionsAnswered(count) {
-  const total = getQuestionsAnswered() + count;
-  localStorage.setItem(QUESTIONS_ANSWERED_KEY, String(total));
-  return total;
-}
-
-export function resetQuizExtras() {
-  localStorage.removeItem(QUIZ_HISTORY_KEY);
-  localStorage.removeItem(QUESTIONS_ANSWERED_KEY);
+export async function addQuestionsAnswered(uid, count) {
+  await updateProgress(uid, { questionsAnswered: increment(count) });
 }
 
 // Grading is centralized here (not in the component tree) so ReviewAnswers

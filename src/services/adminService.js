@@ -1,27 +1,47 @@
-// The only file touching localStorage for admin-managed content and
-// platform settings. Seeds Courses/Lessons/Quizzes/Achievements from the
-// real, currently-live curriculum data files on first access, so admins
-// see actual current content — but every create/edit/delete/reorder here
-// is staged to its own localStorage keys and does NOT feed back into the
+// The only file that touches Cloud Firestore for admin-managed content
+// (courses/lessons/quizzes/achievements collections) and Firebase
+// Storage for admin-uploaded images (course thumbnails, platform logo),
+// plus the `settings` Firestore collection (platform settings +
+// certificate template, one doc each). Seeds Courses/Lessons/Quizzes/
+// Achievements from the real, currently-live curriculum data files the
+// first time each collection is read, so admins see actual current
+// content — but every create/edit/delete/reorder here is staged to its
+// own Firestore collection and does NOT feed back into the
 // student-facing app (Course.jsx, Lesson.jsx, the quiz engine, and
 // achievement checks all still read the original data/*.js files
 // directly). Wiring live-editing back into those files would mean
 // rewriting how nearly every major feature loads its data — out of
 // scope for an admin panel that must not affect the existing user
-// experience. To connect this to a real backend later, replace the
-// internals of these functions; useAdmin.js and every admin component
-// stay unchanged.
+// experience.
 
+import {
+  collection,
+  doc,
+  getDoc,
+  getDocs,
+  setDoc,
+  updateDoc,
+  deleteDoc,
+  query,
+  orderBy,
+  limit,
+  writeBatch,
+} from "firebase/firestore";
+import {
+  ref,
+  uploadBytes,
+  getDownloadURL,
+} from "firebase/storage";
+import { db, storage } from "../firebase/firebase";
 import modules from "../data/modules";
 import quizzesData from "../data/quizzes";
 import achievementsData from "../data/achievements";
 
-const COURSES_KEY = "fedoraquest_admin_courses";
-const LESSONS_KEY = "fedoraquest_admin_lessons";
-const QUIZZES_KEY = "fedoraquest_admin_quizzes";
-const ACHIEVEMENTS_KEY = "fedoraquest_admin_achievements";
-const CERT_TEMPLATE_KEY = "fedoraquest_admin_certificateTemplate";
-const SETTINGS_KEY = "fedoraquest_admin_settings";
+const COURSES_COLLECTION = "courses";
+const LESSONS_COLLECTION = "lessons";
+const QUIZZES_COLLECTION = "quizzes";
+const ACHIEVEMENTS_COLLECTION = "achievements";
+const SETTINGS_COLLECTION = "settings";
 
 export const DEFAULT_SETTINGS = {
   platformName: "FedoraQuest",
@@ -42,24 +62,43 @@ export const DEFAULT_CERTIFICATE_TEMPLATE = {
   footerNote: "This certificate is issued by FedoraQuest.",
 };
 
-function readOrSeed(key, seedFn) {
-  const saved = localStorage.getItem(key);
-  if (saved) return JSON.parse(saved);
-
-  const seeded = seedFn();
-  localStorage.setItem(key, JSON.stringify(seeded));
-  return seeded;
-}
-
-function write(key, value) {
-  localStorage.setItem(key, JSON.stringify(value));
-}
-
 function nextId(records) {
   return records.reduce((max, record) => Math.max(max, record.id), 0) + 1;
 }
 
+async function isCollectionEmpty(collectionRef) {
+  const snapshot = await getDocs(query(collectionRef, limit(1)));
+  return snapshot.empty;
+}
+
+async function seedIfEmpty(collectionRef, seedRecords) {
+  if (!(await isCollectionEmpty(collectionRef))) return;
+
+  const batch = writeBatch(db);
+  seedRecords.forEach((record, index) => {
+    batch.set(doc(collectionRef, String(record.id)), { ...record, order: index });
+  });
+  await batch.commit();
+}
+
+async function getOrdered(collectionRef) {
+  const snapshot = await getDocs(query(collectionRef, orderBy("order", "asc")));
+  return snapshot.docs.map((docSnap) => docSnap.data());
+}
+
+async function reorderByIds(collectionRef, orderedIds) {
+  const batch = writeBatch(db);
+  orderedIds.forEach((id, index) => {
+    batch.update(doc(collectionRef, String(id)), { order: index });
+  });
+  await batch.commit();
+}
+
 // --- Courses (staged from data/modules.js) ---
+
+function coursesRef() {
+  return collection(db, COURSES_COLLECTION);
+}
 
 function seedCourses() {
   return modules.map((module) => ({
@@ -73,14 +112,15 @@ function seedCourses() {
   }));
 }
 
-export function getCourses() {
-  return readOrSeed(COURSES_KEY, seedCourses);
+export async function getCourses() {
+  await seedIfEmpty(coursesRef(), seedCourses());
+  return getOrdered(coursesRef());
 }
 
-export function createCourse(course) {
-  const courses = getCourses();
+export async function createCourse(course) {
+  const existing = await getOrdered(coursesRef());
   const newCourse = {
-    id: nextId(courses),
+    id: nextId(existing),
     title: "",
     description: "",
     difficulty: "Beginner",
@@ -89,32 +129,31 @@ export function createCourse(course) {
     published: false,
     ...course,
   };
-  write(COURSES_KEY, [...courses, newCourse]);
+  await setDoc(doc(coursesRef(), String(newCourse.id)), {
+    ...newCourse,
+    order: existing.length,
+  });
   return newCourse;
 }
 
-export function updateCourse(id, updates) {
-  const courses = getCourses().map((course) =>
-    course.id === id ? { ...course, ...updates } : course
-  );
-  write(COURSES_KEY, courses);
-  return courses.find((course) => course.id === id);
+export async function updateCourse(id, updates) {
+  await updateDoc(doc(coursesRef(), String(id)), updates);
+  return (await getDoc(doc(coursesRef(), String(id)))).data();
 }
 
-export function deleteCourse(id) {
-  write(COURSES_KEY, getCourses().filter((course) => course.id !== id));
+export async function deleteCourse(id) {
+  await deleteDoc(doc(coursesRef(), String(id)));
 }
 
-export function reorderCourses(orderedIds) {
-  const courses = getCourses();
-  const reordered = orderedIds
-    .map((id) => courses.find((course) => course.id === id))
-    .filter(Boolean);
-  write(COURSES_KEY, reordered);
-  return reordered;
+export async function reorderCourses(orderedIds) {
+  await reorderByIds(coursesRef(), orderedIds);
 }
 
-// --- Lessons (staged from data/lessons.js, flat list across all courses) ---
+// --- Lessons (staged from data/modules.js, flat list across all courses) ---
+
+function lessonsRef() {
+  return collection(db, LESSONS_COLLECTION);
+}
 
 function seedLessons() {
   return modules.flatMap((module) =>
@@ -132,14 +171,15 @@ function seedLessons() {
   );
 }
 
-export function getLessons() {
-  return readOrSeed(LESSONS_KEY, seedLessons);
+export async function getLessons() {
+  await seedIfEmpty(lessonsRef(), seedLessons());
+  return getOrdered(lessonsRef());
 }
 
-export function createLesson(lesson) {
-  const lessons = getLessons();
+export async function createLesson(lesson) {
+  const existing = await getOrdered(lessonsRef());
   const newLesson = {
-    id: nextId(lessons),
+    id: nextId(existing),
     courseId: null,
     day: "",
     title: "",
@@ -150,32 +190,31 @@ export function createLesson(lesson) {
     resources: [],
     ...lesson,
   };
-  write(LESSONS_KEY, [...lessons, newLesson]);
+  await setDoc(doc(lessonsRef(), String(newLesson.id)), {
+    ...newLesson,
+    order: existing.length,
+  });
   return newLesson;
 }
 
-export function updateLesson(id, updates) {
-  const lessons = getLessons().map((lesson) =>
-    lesson.id === id ? { ...lesson, ...updates } : lesson
-  );
-  write(LESSONS_KEY, lessons);
-  return lessons.find((lesson) => lesson.id === id);
+export async function updateLesson(id, updates) {
+  await updateDoc(doc(lessonsRef(), String(id)), updates);
+  return (await getDoc(doc(lessonsRef(), String(id)))).data();
 }
 
-export function deleteLesson(id) {
-  write(LESSONS_KEY, getLessons().filter((lesson) => lesson.id !== id));
+export async function deleteLesson(id) {
+  await deleteDoc(doc(lessonsRef(), String(id)));
 }
 
-export function reorderLessons(orderedIds) {
-  const lessons = getLessons();
-  const reordered = orderedIds
-    .map((id) => lessons.find((lesson) => lesson.id === id))
-    .filter(Boolean);
-  write(LESSONS_KEY, reordered);
-  return reordered;
+export async function reorderLessons(orderedIds) {
+  await reorderByIds(lessonsRef(), orderedIds);
 }
 
 // --- Quizzes (staged from data/quizzes/index.js) ---
+
+function quizzesRef() {
+  return collection(db, QUIZZES_COLLECTION);
+}
 
 function seedQuizzes() {
   return Object.entries(quizzesData).map(([lessonId, quiz], index) => ({
@@ -190,14 +229,15 @@ function seedQuizzes() {
   }));
 }
 
-export function getQuizzes() {
-  return readOrSeed(QUIZZES_KEY, seedQuizzes);
+export async function getQuizzes() {
+  await seedIfEmpty(quizzesRef(), seedQuizzes());
+  return getOrdered(quizzesRef());
 }
 
-export function createQuiz(quiz) {
-  const quizzes = getQuizzes();
+export async function createQuiz(quiz) {
+  const existing = await getOrdered(quizzesRef());
   const newQuiz = {
-    id: nextId(quizzes),
+    id: nextId(existing),
     lessonId: null,
     title: "",
     difficulty: "beginner",
@@ -207,34 +247,42 @@ export function createQuiz(quiz) {
     questions: [],
     ...quiz,
   };
-  write(QUIZZES_KEY, [...quizzes, newQuiz]);
+  await setDoc(doc(quizzesRef(), String(newQuiz.id)), {
+    ...newQuiz,
+    order: existing.length,
+  });
   return newQuiz;
 }
 
-export function updateQuiz(id, updates) {
-  const quizzes = getQuizzes().map((quiz) =>
-    quiz.id === id ? { ...quiz, ...updates } : quiz
-  );
-  write(QUIZZES_KEY, quizzes);
-  return quizzes.find((quiz) => quiz.id === id);
+export async function updateQuiz(id, updates) {
+  await updateDoc(doc(quizzesRef(), String(id)), updates);
+  return (await getDoc(doc(quizzesRef(), String(id)))).data();
 }
 
-export function deleteQuiz(id) {
-  write(QUIZZES_KEY, getQuizzes().filter((quiz) => quiz.id !== id));
+export async function deleteQuiz(id) {
+  await deleteDoc(doc(quizzesRef(), String(id)));
 }
 
 // --- Achievements (staged from data/achievements.js) ---
+// Kept keyed by the achievement's own string id (matches the ids baked
+// into utils/checkAchievements.js and every user's progress.achievements
+// array) rather than a separate numeric id.
+
+function achievementsRef() {
+  return collection(db, ACHIEVEMENTS_COLLECTION);
+}
 
 function seedAchievements() {
   return achievementsData.map((achievement) => ({ ...achievement }));
 }
 
-export function getAdminAchievements() {
-  return readOrSeed(ACHIEVEMENTS_KEY, seedAchievements);
+export async function getAdminAchievements() {
+  await seedIfEmpty(achievementsRef(), seedAchievements());
+  return getOrdered(achievementsRef());
 }
 
-export function createAchievement(achievement) {
-  const achievements = getAdminAchievements();
+export async function createAchievement(achievement) {
+  const existing = await getOrdered(achievementsRef());
   const newAchievement = {
     id: `custom_${Date.now()}`,
     title: "",
@@ -245,64 +293,85 @@ export function createAchievement(achievement) {
     unlockCondition: "",
     ...achievement,
   };
-  write(ACHIEVEMENTS_KEY, [...achievements, newAchievement]);
+  await setDoc(doc(achievementsRef(), newAchievement.id), {
+    ...newAchievement,
+    order: existing.length,
+  });
   return newAchievement;
 }
 
-export function updateAchievement(id, updates) {
-  const achievements = getAdminAchievements().map((achievement) =>
-    achievement.id === id ? { ...achievement, ...updates } : achievement
-  );
-  write(ACHIEVEMENTS_KEY, achievements);
-  return achievements.find((achievement) => achievement.id === id);
+export async function updateAchievement(id, updates) {
+  await updateDoc(doc(achievementsRef(), id), updates);
+  return (await getDoc(doc(achievementsRef(), id))).data();
 }
 
-export function deleteAchievement(id) {
-  write(
-    ACHIEVEMENTS_KEY,
-    getAdminAchievements().filter((achievement) => achievement.id !== id)
-  );
+export async function deleteAchievement(id) {
+  await deleteDoc(doc(achievementsRef(), id));
 }
 
 // --- Certificate template ---
 
-export function getCertificateTemplate() {
-  const saved = localStorage.getItem(CERT_TEMPLATE_KEY);
-  return saved ? JSON.parse(saved) : DEFAULT_CERTIFICATE_TEMPLATE;
+function certificateTemplateDocRef() {
+  return doc(db, SETTINGS_COLLECTION, "certificateTemplate");
 }
 
-export function updateCertificateTemplate(updates) {
-  const updated = { ...getCertificateTemplate(), ...updates };
-  write(CERT_TEMPLATE_KEY, updated);
+export async function getCertificateTemplate() {
+  const snapshot = await getDoc(certificateTemplateDocRef());
+  return snapshot.exists()
+    ? { ...DEFAULT_CERTIFICATE_TEMPLATE, ...snapshot.data() }
+    : DEFAULT_CERTIFICATE_TEMPLATE;
+}
+
+export async function updateCertificateTemplate(updates) {
+  const current = await getCertificateTemplate();
+  const updated = { ...current, ...updates };
+  await setDoc(certificateTemplateDocRef(), updated);
   return updated;
 }
 
 // --- Platform settings ---
 
-export function getSettings() {
-  const saved = localStorage.getItem(SETTINGS_KEY);
-  if (!saved) return DEFAULT_SETTINGS;
+function platformSettingsDocRef() {
+  return doc(db, SETTINGS_COLLECTION, "platform");
+}
 
-  const parsed = JSON.parse(saved);
+export async function getSettings() {
+  const snapshot = await getDoc(platformSettingsDocRef());
+  if (!snapshot.exists()) return DEFAULT_SETTINGS;
+
+  const saved = snapshot.data();
   return {
     ...DEFAULT_SETTINGS,
-    ...parsed,
-    featureToggles: {
-      ...DEFAULT_SETTINGS.featureToggles,
-      ...parsed.featureToggles,
-    },
+    ...saved,
+    featureToggles: { ...DEFAULT_SETTINGS.featureToggles, ...saved.featureToggles },
   };
 }
 
-export function updateSettings(updates) {
-  const updated = { ...getSettings(), ...updates };
-  write(SETTINGS_KEY, updated);
+export async function updateSettings(updates) {
+  const current = await getSettings();
+  const updated = { ...current, ...updates };
+  await setDoc(platformSettingsDocRef(), updated);
   return updated;
 }
 
-export function resetAllStagedContent() {
-  localStorage.removeItem(COURSES_KEY);
-  localStorage.removeItem(LESSONS_KEY);
-  localStorage.removeItem(QUIZZES_KEY);
-  localStorage.removeItem(ACHIEVEMENTS_KEY);
+// --- Admin-uploaded images (Firebase Storage) ---
+
+function extensionFromMimeType(type) {
+  if (type === "image/png") return "png";
+  if (type === "image/webp") return "webp";
+  return "jpg";
+}
+
+export async function uploadLogo(file) {
+  const path = `admin/logo.${extensionFromMimeType(file.type)}`;
+  const storageRef = ref(storage, path);
+  await uploadBytes(storageRef, file);
+  return getDownloadURL(storageRef);
+}
+
+export async function uploadCourseThumbnail(file) {
+  const path = `admin/thumbnails/${Date.now()}-${file.name}`;
+  const storageRef = ref(storage, path);
+  await uploadBytes(storageRef, file);
+  return getDownloadURL(storageRef);
 }

@@ -13,6 +13,9 @@ export default function checkAchievements({
   unlockAchievement,
   streak,
   quizResults,
+  commandsExecuted = 0,
+  uniqueCommandsUsed = [],
+  questionsAnswered = 0,
 }) {
   // First Lesson
   if (
@@ -171,5 +174,29 @@ export default function checkAchievements({
     !achievements.includes("lab_expert")
   ) {
     unlockAchievement("lab_expert");
+  }
+
+  // 100 terminal commands executed (moved here from Labs.jsx — that
+  // check relied on a synchronous return value from
+  // achievementService.incrementCommandsExecuted(), which became async
+  // once it wrote to Firestore instead of localStorage; centralizing it
+  // here, watching the same real-time progress data every other
+  // achievement check already watches, avoids that problem entirely)
+  if (commandsExecuted >= 100 && !achievements.includes("hundred_commands")) {
+    unlockAchievement("hundred_commands");
+  }
+
+  // 12 unique commands used
+  if (
+    uniqueCommandsUsed.length >= 12 &&
+    !achievements.includes("terminal_expert")
+  ) {
+    unlockAchievement("terminal_expert");
+  }
+
+  // 100 quiz questions answered (moved here from useQuiz.js for the
+  // same reason as the command-based checks above)
+  if (questionsAnswered >= 100 && !achievements.includes("hundred_questions")) {
+    unlockAchievement("hundred_questions");
   }
 }

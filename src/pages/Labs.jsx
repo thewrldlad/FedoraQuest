@@ -10,26 +10,22 @@ import * as achievementService from "../services/achievementService";
 
 export default function Labs() {
   const {
+    uid,
     completedLabs,
     setCompletedLabs,
     unlockedLabs,
     setUnlockedLabs,
     addXP,
-    achievements,
-    unlockAchievement,
   } = useGame();
 
+  // Fire-and-forget writes to the shared progress/{uid} document —
+  // GameContext's real-time listener picks up the new totals on its own
+  // and checkAchievements.js (run centrally from GameContext) unlocks
+  // "hundred_commands"/"terminal_expert" once the thresholds are met.
   const handleCommandExecuted = (commandName) => {
-    const totalCommands = achievementService.incrementCommandsExecuted();
-    const uniqueUsed = achievementService.recordCommandUsed(commandName);
-
-    if (totalCommands >= 100 && !achievements.includes("hundred_commands")) {
-      unlockAchievement("hundred_commands");
-    }
-
-    if (uniqueUsed.length >= 12 && !achievements.includes("terminal_expert")) {
-      unlockAchievement("terminal_expert");
-    }
+    if (!uid) return;
+    achievementService.incrementCommandsExecuted(uid);
+    achievementService.recordCommandUsed(uid, commandName);
   };
 
   const [expandedCategories, setExpandedCategories] = useState([1]);

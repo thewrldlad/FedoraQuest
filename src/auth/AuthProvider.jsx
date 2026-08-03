@@ -6,19 +6,17 @@ export function AuthProvider({ children }) {
   const [user, setUser] = useState(null);
   const [isLoading, setIsLoading] = useState(true);
 
+  // Firebase Authentication is meant to be consumed via a persistent
+  // listener rather than a one-shot fetch — it fires immediately with
+  // the restored session (or null) on load, then again on every
+  // login/logout, so `user` stays correct without AuthProvider polling.
   useEffect(() => {
-    let isMounted = true;
-
-    authService.getCurrentUser().then((currentUser) => {
-      if (isMounted) {
-        setUser(currentUser);
-        setIsLoading(false);
-      }
+    const unsubscribe = authService.onAuthStateChange((currentUser) => {
+      setUser(currentUser);
+      setIsLoading(false);
     });
 
-    return () => {
-      isMounted = false;
-    };
+    return unsubscribe;
   }, []);
 
   const login = async (email, password, rememberMe) => {

@@ -1,0 +1,106 @@
+rules_version = '2';
+
+// Deploy with: firebase deploy --only firestore:rules
+// (requires the Firebase CLI, which this sandbox cannot run — install
+// and run it yourself: npm install -g firebase-tools && firebase login)
+
+service cloud.firestore {
+  match /databases/{database}/documents {
+
+    function isSignedIn() {
+      return request.auth != null;
+    }
+
+    function isOwner(uid) {
+      return isSignedIn() && request.auth.uid == uid;
+    }
+
+    // Reads the requesting user's OWN role off their own users/{uid}
+    // document. Firestore rules can't join across documents, so this is
+    // the standard pattern: every request that needs to check "is this
+    // caller an admin" pays for one extra document read of their own
+    // profile, not the document they're trying to access.
+    function isAdmin() {
+      return isSignedIn() &&
+        get(/databases/$(database)/documents/users/$(request.auth.uid)).data.role == 'admin';
+    }
+
+    // --- users/{uid} — profile documents ---
+    // Anyone signed in can read profiles (needed for e.g. certificate
+    // display), but a user can only ever write their own document,
+    // except role/active — those are admin-only fields, enforced below.
+    match /users/{uid} {
+      allow read: if isSignedIn();
+      allow create: if isOwner(uid);
+      // Admins can update any field on any user's document (role changes,
+      // deactivation). A non-admin editing their OWN document can change
+      // anything except `role`/`active` — those two fields are
+      // admin-only even on your own account, so you can't grant
+      // yourself a role or reactivate a deactivated account.
+      allow update: if isAdmin() || (
+        isOwner(uid) &&
+        !('role' in request.resource.data.diff(resource.data).affectedKeys()) &&
+        !('active' in request.resource.data.diff(resource.data).affectedKeys())
+      );
+      allow delete: if isAdmin();
+    }
+
+    // --- progress/{uid} — gameplay state (XP, streak, lessons, quizzes,
+    // achievements) and its quizAttempts subcollection ---
+    // Only the owning user (or an admin, for support/inspection) can
+    // read or write their own progress document. There's no per-user
+    // create restriction beyond ownership since progressService creates
+    // this once at registration for that same uid.
+    match /progress/{uid} {
+      allow read: if isOwner(uid) || isAdmin();
+      allow write: if isOwner(uid);
+
+      match /quizAttempts/{attemptId} {
+        allow read: if isOwner(uid) || isAdmin();
+        allow create: if isOwner(uid);
+        allow update, delete: if false; // attempt history is append-only
+      }
+    }
+
+    // --- certificates/{id} — issued certificates ---
+    // Students can create their own (certificateService.createCertificate
+    // always writes uid == the caller) and read only their own; admins
+    // can read every certificate for the admin Certificates page.
+    match /certificates/{certId} {
+      allow read: if isAdmin() || (isSignedIn() && resource.data.uid == request.auth.uid);
+      allow create: if isSignedIn() && request.resource.data.uid == request.auth.uid;
+      allow update, delete: if isAdmin();
+    }
+
+    // --- Admin-managed catalog content: anyone signed in can read (the
+    // admin pages need to show it, and a future "real" course view would
+    // too); only admins can write.
+    match /courses/{courseId} {
+      allow read: if isSignedIn();
+      allow write: if isAdmin();
+    }
+
+    match /lessons/{lessonId} {
+      allow read: if isSignedIn();
+      allow write: if isAdmin();
+    }
+
+    match /quizzes/{quizId} {
+      allow read: if isSignedIn();
+      allow write: if isAdmin();
+    }
+
+    match /achievements/{achievementId} {
+      allow read: if isSignedIn();
+      allow write: if isAdmin();
+    }
+
+    // --- settings/platform, settings/certificateTemplate ---
+    // Every signed-in user needs to read platform settings (theme,
+    // feature toggles); only admins can change them.
+    match /settings/{docId} {
+      allow read: if isSignedIn();
+      allow write: if isAdmin();
+    }
+  }
+}

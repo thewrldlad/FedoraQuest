@@ -5,20 +5,17 @@ import Button from "../Button/Button";
 const ACCEPTED_TYPES = ["image/png", "image/jpeg", "image/webp"];
 const MAX_SIZE_BYTES = 5 * 1024 * 1024;
 
-// Converts a picked file into a stored `value` (currently a base64 data
-// URI). To migrate to Firebase/Supabase later, replace the body of
-// processFile with an upload call that resolves to a hosted URL instead —
-// the value/onChange contract this component exposes doesn't need to change.
-function processFile(file) {
-  return new Promise((resolve, reject) => {
-    const reader = new FileReader();
-    reader.onload = () => resolve(reader.result);
-    reader.onerror = () => reject(new Error("read-error"));
-    reader.readAsDataURL(file);
-  });
-}
-
-export default function AvatarUploader({ value, fallbackInitials, onChange }) {
+// `onUpload(file)` is expected to resolve to a hosted download URL (it
+// calls profileService.uploadAvatar under the hood, via useProfile) —
+// this component never touches Firebase Storage itself, it just drives
+// the file picker, validation, and upload/remove lifecycle around it.
+export default function AvatarUploader({
+  value,
+  fallbackInitials,
+  onChange,
+  onUpload,
+  onRemove,
+}) {
   const fileInputRef = useRef(null);
   const [isProcessing, setIsProcessing] = useState(false);
   const [error, setError] = useState("");
@@ -51,19 +48,28 @@ export default function AvatarUploader({ value, fallbackInitials, onChange }) {
     setImgError(false);
 
     try {
-      const result = await processFile(file);
-      onChange(result);
+      const url = await onUpload(file);
+      onChange(url);
     } catch {
-      setError("Something went wrong reading that image. Please try again.");
+      setError("Upload failed — check your connection and try again.");
     } finally {
       setIsProcessing(false);
     }
   };
 
-  const handleRemove = () => {
-    onChange("");
+  const handleRemove = async () => {
     setError("");
-    setImgError(false);
+    setIsProcessing(true);
+
+    try {
+      await onRemove();
+      onChange("");
+      setImgError(false);
+    } catch {
+      setError("Couldn't remove the photo — please try again.");
+    } finally {
+      setIsProcessing(false);
+    }
   };
 
   return (

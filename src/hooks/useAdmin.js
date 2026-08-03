@@ -1,44 +1,58 @@
-import { useState, useCallback } from "react";
+import { useState, useCallback, useEffect } from "react";
 import * as authService from "../auth/authService";
 import * as adminService from "../services/adminService";
+import * as certificateService from "../services/certificateService";
 
 // Generic create/edit/delete/(optional reorder) over one of adminService's
 // resource collections — shared by courses/lessons/quizzes/achievements
-// instead of writing the same wiring four times.
+// instead of writing the same wiring four times. Loads itself on mount
+// (Firestore reads are async, unlike the old synchronous localStorage
+// reads this replaced), so admin pages don't need their own loading
+// useEffect the way the Users page still does for authService.
 function useResourceCrud(getAll, api) {
-  const [items, setItems] = useState(() => getAll());
+  const [items, setItems] = useState([]);
+  const [isLoading, setIsLoading] = useState(true);
 
-  const refresh = useCallback(() => setItems(getAll()), [getAll]);
+  const refresh = useCallback(async () => {
+    const all = await getAll();
+    setItems(all);
+    setIsLoading(false);
+    return all;
+  }, [getAll]);
+
+  useEffect(() => {
+    refresh();
+  }, [refresh]);
 
   const add = useCallback(
-    (item) => {
-      api.create(item);
-      refresh();
+    async (item) => {
+      await api.create(item);
+      await refresh();
     },
     [api, refresh]
   );
 
   const edit = useCallback(
-    (id, updates) => {
-      api.update(id, updates);
-      refresh();
+    async (id, updates) => {
+      await api.update(id, updates);
+      await refresh();
     },
     [api, refresh]
   );
 
   const remove = useCallback(
-    (id) => {
-      api.delete(id);
-      refresh();
+    async (id) => {
+      await api.delete(id);
+      await refresh();
     },
     [api, refresh]
   );
 
   const reorder = useCallback(
-    (id, direction) => {
+    async (id, direction) => {
       if (!api.reorder) return;
 
-      const current = getAll();
+      const current = await getAll();
       const index = current.findIndex((entry) => entry.id === id);
       const swapIndex = direction === "up" ? index - 1 : index + 1;
       if (swapIndex < 0 || swapIndex >= current.length) return;
@@ -48,25 +62,37 @@ function useResourceCrud(getAll, api) {
         reordered[swapIndex],
         reordered[index],
       ];
-      api.reorder(reordered.map((entry) => entry.id));
+      await api.reorder(reordered.map((entry) => entry.id));
       setItems(reordered);
     },
     [api, getAll]
   );
 
-  return { items, add, edit, remove, reorder, refresh };
+  return { items, isLoading, add, edit, remove, reorder, refresh };
 }
 
 export default function useAdmin() {
   const [users, setUsers] = useState([]);
-  const [settings, setSettings] = useState(() => adminService.getSettings());
-  const [certificateTemplate, setCertificateTemplate] = useState(() =>
-    adminService.getCertificateTemplate()
+  const [certificates, setCertificates] = useState([]);
+  const [settings, setSettings] = useState(adminService.DEFAULT_SETTINGS);
+  const [certificateTemplate, setCertificateTemplate] = useState(
+    adminService.DEFAULT_CERTIFICATE_TEMPLATE
   );
+
+  useEffect(() => {
+    adminService.getSettings().then(setSettings);
+    adminService.getCertificateTemplate().then(setCertificateTemplate);
+  }, []);
 
   const refreshUsers = useCallback(async () => {
     const all = await authService.getAllUsers();
     setUsers(all);
+    return all;
+  }, []);
+
+  const refreshCertificates = useCallback(async () => {
+    const all = await certificateService.getAllCertificates();
+    setCertificates(all);
     return all;
   }, []);
 
@@ -120,13 +146,24 @@ export default function useAdmin() {
     delete: adminService.deleteAchievement,
   });
 
-  const editSettings = useCallback((updates) => {
-    setSettings(adminService.updateSettings(updates));
+  const editSettings = useCallback(async (updates) => {
+    setSettings(await adminService.updateSettings(updates));
   }, []);
 
-  const editCertificateTemplate = useCallback((updates) => {
-    setCertificateTemplate(adminService.updateCertificateTemplate(updates));
+  const editCertificateTemplate = useCallback(async (updates) => {
+    setCertificateTemplate(await adminService.updateCertificateTemplate(updates));
   }, []);
+
+  const uploadLogo = useCallback(async (file) => {
+    const logoUrl = await adminService.uploadLogo(file);
+    setSettings(await adminService.updateSettings({ logoUrl }));
+    return logoUrl;
+  }, []);
+
+  const uploadCourseThumbnail = useCallback(
+    (file) => adminService.uploadCourseThumbnail(file),
+    []
+  );
 
   return {
     users,
@@ -135,6 +172,9 @@ export default function useAdmin() {
     setUserActiveStatus,
     editUserProfile,
 
+    certificates,
+    refreshCertificates,
+
     courses,
     lessons,
     quizzes,
@@ -142,6 +182,8 @@ export default function useAdmin() {
 
     settings,
     editSettings,
+    uploadLogo,
+    uploadCourseThumbnail,
 
     certificateTemplate,
     editCertificateTemplate,

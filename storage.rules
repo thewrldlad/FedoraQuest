@@ -1,0 +1,47 @@
+rules_version = '2';
+
+// Deploy with: firebase deploy --only storage
+// (requires the Firebase CLI, which this sandbox cannot run — install
+// and run it yourself: npm install -g firebase-tools && firebase login)
+
+service firebase.storage {
+  match /b/{bucket}/o {
+
+    function isSignedIn() {
+      return request.auth != null;
+    }
+
+    function isAdmin() {
+      return isSignedIn() &&
+        firestore.get(/databases/(default)/documents/users/$(request.auth.uid)).data.role == 'admin';
+    }
+
+    function isImage() {
+      return request.resource.contentType.matches('image/.*');
+    }
+
+    // 5 MB — matches the client-side limit already enforced in
+    // AvatarUploader.jsx, checked again here since client-side checks
+    // are only a UX nicety, not a security boundary.
+    function underSizeLimit() {
+      return request.resource.size < 5 * 1024 * 1024;
+    }
+
+    // --- avatars/{uid}/avatar.<ext> ---
+    // Anyone signed in can VIEW any avatar (they're shown on shared
+    // pages like the admin Users list), but a user can only upload to
+    // their own folder.
+    match /avatars/{uid}/{fileName} {
+      allow read: if isSignedIn();
+      allow write: if isSignedIn() && request.auth.uid == uid && isImage() && underSizeLimit();
+    }
+
+    // --- admin/logo.<ext>, admin/thumbnails/{file} ---
+    // Platform branding assets — readable by anyone signed in, writable
+    // only by admins.
+    match /admin/{allPaths=**} {
+      allow read: if isSignedIn();
+      allow write: if isAdmin() && isImage() && underSizeLimit();
+    }
+  }
+}

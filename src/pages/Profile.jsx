@@ -35,7 +35,7 @@ export default function Profile() {
     firstSeenDate,
   } = useGame();
 
-  const { profile, updateProfile } = useProfile();
+  const { profile, updateProfile, uploadAvatar, removeAvatar } = useProfile();
   const [isEditing, setIsEditing] = useState(false);
 
   const level = getLevelInfo(xp);
@@ -82,6 +82,8 @@ export default function Profile() {
           profile={profile}
           onSave={handleSaveProfile}
           onCancel={() => setIsEditing(false)}
+          onUploadAvatar={uploadAvatar}
+          onRemoveAvatar={removeAvatar}
         />
       ) : (
         <ProfileHeader

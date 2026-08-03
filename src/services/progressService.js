@@ -1,36 +1,93 @@
-// The only file that touches localStorage for the new course-progress
-// tracking additions (last opened lesson, longest streak ever reached).
-// Lesson/lab completion, XP, and current streak remain owned by
-// GameContext — this deliberately does not duplicate that existing
-// source of truth. To connect this to Firebase/Supabase later, replace
-// the internals of these functions; useCourseProgress.js and every
-// component that calls it stay unchanged.
+// The only file that owns the lifecycle of the progress/{uid} Firestore
+// document — the single source of truth for gameplay state (XP, streak,
+// lesson/lab completion, quiz results, unlocked achievement ids, and the
+// extras this feature already owned: last opened lesson, longest
+// streak). Consolidated into ONE document per user (instead of one
+// Firestore doc per old localStorage key) so GameContext needs only a
+// single real-time listener rather than five-plus — see PHASE 15 (avoid
+// unnecessary reads, optimized listeners) in the migration brief.
+//
+// achievementService.js and quizService.js also write specific fields
+// onto this same document (achievementUnlockDates, commandsExecuted,
+// uniqueCommandsUsed, questionsAnswered) rather than owning separate
+// documents — GameContext's one listener here picks up their writes too,
+// for free, with no extra reads.
 
-const LAST_OPENED_LESSON_KEY = "fedoraquest_lastOpenedLessonId";
-const LONGEST_STREAK_KEY = "fedoraquest_longestStreak";
+import {
+  doc,
+  getDoc,
+  setDoc,
+  updateDoc,
+  onSnapshot,
+} from "firebase/firestore";
+import { db } from "../firebase/firebase";
 
-export function getLastOpenedLessonId() {
-  const saved = localStorage.getItem(LAST_OPENED_LESSON_KEY);
-  return saved ? Number(saved) : null;
+const PROGRESS_COLLECTION = "progress";
+
+function formatDate(date) {
+  const year = date.getFullYear();
+  const month = String(date.getMonth() + 1).padStart(2, "0");
+  const day = String(date.getDate()).padStart(2, "0");
+  return `${year}-${month}-${day}`;
 }
 
-export function saveLastOpenedLessonId(lessonId) {
-  localStorage.setItem(LAST_OPENED_LESSON_KEY, String(lessonId));
+export const DEFAULT_PROGRESS = {
+  xp: 0,
+  completedLessons: [],
+  unlockedLessons: [1],
+  completedLabs: [],
+  unlockedLabs: [1],
+  quizResults: {},
+  achievements: [],
+  streak: 0,
+  lastStudyDate: null,
+  firstSeenDate: null,
+  lastOpenedLessonId: null,
+  longestStreak: 0,
+  achievementUnlockDates: {},
+  commandsExecuted: 0,
+  uniqueCommandsUsed: [],
+  questionsAnswered: 0,
+};
+
+export function progressDocRef(uid) {
+  return doc(db, PROGRESS_COLLECTION, uid);
 }
 
-export function getLongestStreak() {
-  const saved = localStorage.getItem(LONGEST_STREAK_KEY);
-  return saved ? Number(saved) : 0;
+// Called once, by authService.register(), right after the profile
+// document is created — every account starts from Day 1.
+export async function createProgressDocument(uid) {
+  const document = {
+    ...DEFAULT_PROGRESS,
+    firstSeenDate: formatDate(new Date()),
+  };
+  await setDoc(progressDocRef(uid), document);
+  return document;
 }
 
-export function saveLongestStreak(value) {
-  localStorage.setItem(LONGEST_STREAK_KEY, String(value));
+export async function getProgress(uid) {
+  const snapshot = await getDoc(progressDocRef(uid));
+  return snapshot.exists() ? snapshot.data() : null;
 }
 
-// Only clears this service's own data. Resetting completedLessons/
-// unlockedLessons is the caller's responsibility (see
-// useCourseProgress.resetProgress), since those belong to GameContext.
-export function resetProgressExtras() {
-  localStorage.removeItem(LAST_OPENED_LESSON_KEY);
-  localStorage.removeItem(LONGEST_STREAK_KEY);
+// Real-time subscription — GameContext stays in sync automatically
+// (including across tabs/devices) instead of only updating after its
+// own local writes resolve.
+export function subscribeToProgress(uid, callback) {
+  return onSnapshot(progressDocRef(uid), (snapshot) => {
+    callback(snapshot.exists() ? snapshot.data() : null);
+  });
+}
+
+export async function updateProgress(uid, updates) {
+  await updateDoc(progressDocRef(uid), updates);
+}
+
+export async function resetProgressExtras(uid) {
+  await updateDoc(progressDocRef(uid), {
+    completedLessons: [],
+    unlockedLessons: [1],
+    lastOpenedLessonId: null,
+    longestStreak: 0,
+  });
 }

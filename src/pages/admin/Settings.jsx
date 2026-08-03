@@ -5,15 +5,14 @@ const INPUT_CLASSES =
   "w-full bg-fedora-bg border border-fedora-border rounded-lg px-3 py-2 text-fedora-text focus:outline-none focus:border-fedora-accent";
 
 export default function AdminSettings() {
-  const { settings, editSettings } = useAdmin();
+  const { settings, editSettings, uploadLogo } = useAdmin();
 
-  const handleLogoChange = (event) => {
+  const handleLogoChange = async (event) => {
     const file = event.target.files?.[0];
+    event.target.value = "";
     if (!file) return;
 
-    const reader = new FileReader();
-    reader.onload = () => editSettings({ logoUrl: reader.result });
-    reader.readAsDataURL(file);
+    await uploadLogo(file);
   };
 
   return (

@@ -1,9 +1,11 @@
-// The only file that touches localStorage for settings data. To connect
-// this to a real backend later, replace the internals of these two
-// functions (e.g. fetch/save against an API) — useSettings.js and every
-// component that calls it stay unchanged.
+// Personal (per-user) settings live in the `settings` field of the same
+// users/{uid} Firestore document profileService.js owns — this is the
+// literal field PHASE 3 of the migration brief calls for. This file
+// stays the only place that reads/writes that field, delegating the
+// actual Firestore call to profileService so there's still exactly one
+// file touching the users/{uid} document.
 
-const SETTINGS_KEY = "fedoraquest_settings";
+import * as profileService from "./profileService";
 
 export const DEFAULT_SETTINGS = {
   appearance: {
@@ -32,34 +34,26 @@ export const DEFAULT_SETTINGS = {
   },
 };
 
-export function getSettings() {
-  const saved = localStorage.getItem(SETTINGS_KEY);
+// Shallow-merges each section so new fields added later (or a
+// partially-saved document) fall back to sane defaults instead of
+// leaving a section undefined.
+function withDefaults(saved) {
   if (!saved) return DEFAULT_SETTINGS;
 
-  try {
-    const parsed = JSON.parse(saved);
-
-    // Shallow-merge each section so new fields added later (or a
-    // corrupted/partial save) fall back to sane defaults instead of
-    // leaving a section undefined.
-    return {
-      appearance: { ...DEFAULT_SETTINGS.appearance, ...parsed.appearance },
-      notifications: {
-        ...DEFAULT_SETTINGS.notifications,
-        ...parsed.notifications,
-      },
-      privacy: { ...DEFAULT_SETTINGS.privacy, ...parsed.privacy },
-      language: { ...DEFAULT_SETTINGS.language, ...parsed.language },
-      accessibility: {
-        ...DEFAULT_SETTINGS.accessibility,
-        ...parsed.accessibility,
-      },
-    };
-  } catch {
-    return DEFAULT_SETTINGS;
-  }
+  return {
+    appearance: { ...DEFAULT_SETTINGS.appearance, ...saved.appearance },
+    notifications: { ...DEFAULT_SETTINGS.notifications, ...saved.notifications },
+    privacy: { ...DEFAULT_SETTINGS.privacy, ...saved.privacy },
+    language: { ...DEFAULT_SETTINGS.language, ...saved.language },
+    accessibility: { ...DEFAULT_SETTINGS.accessibility, ...saved.accessibility },
+  };
 }
 
-export function saveSettings(settings) {
-  localStorage.setItem(SETTINGS_KEY, JSON.stringify(settings));
+export async function getSettings(uid) {
+  const profile = await profileService.getProfile(uid);
+  return withDefaults(profile?.settings);
+}
+
+export async function saveSettings(uid, settings) {
+  await profileService.updateProfile(uid, { settings });
 }

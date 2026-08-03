@@ -1,28 +1,73 @@
-import usePersistedState from "./usePersistedState";
+import { useState, useEffect, useCallback } from "react";
+import useAuth from "../auth/useAuth";
+import * as profileService from "../services/profileService";
 
-// Editable profile fields, kept separate from GameContext's progress state.
-// This is the seam for a future backend swap (Firebase/Supabase, etc.):
-// components only ever call useProfile() and get back { profile,
-// updateProfile } — nothing about them needs to change if what's inside
-// this hook changes from localStorage to a remote store.
+// Sources profile data from the authenticated user's Firestore document
+// (via profileService, through authService/useAuth) instead of an
+// independent localStorage key — previously useProfile and authService
+// each kept their own separate copy of fullName/username/email, which
+// could silently drift out of sync. Now there is exactly one profile
+// document per account, and this hook is just a read/write view over it.
 export const DEFAULT_PROFILE = {
-  fullName: "The Wrld Lad",
-  username: "thewrldlad",
+  fullName: "",
+  username: "",
   email: "",
-  bio: "Learning Fedora Linux one lesson at a time.",
+  bio: "",
   avatarUrl: "",
   learningLevel: "Linux Beginner",
 };
 
 export default function useProfile() {
-  const [profile, setProfile] = usePersistedState(
-    "profileData",
-    DEFAULT_PROFILE
+  const { user, updateAccount } = useAuth();
+  const [profile, setProfile] = useState(DEFAULT_PROFILE);
+  const [isLoading, setIsLoading] = useState(true);
+
+  useEffect(() => {
+    if (!user) {
+      setProfile(DEFAULT_PROFILE);
+      setIsLoading(false);
+      return;
+    }
+
+    setProfile({
+      fullName: user.fullName || "",
+      username: user.username || "",
+      email: user.email || "",
+      bio: user.bio || "",
+      avatarUrl: user.photoURL || "",
+      learningLevel: user.learningLevel || DEFAULT_PROFILE.learningLevel,
+    });
+    setIsLoading(false);
+  }, [user]);
+
+  // Avatar changes go through uploadAvatar/removeAvatar below (which
+  // touch Firebase Storage, not just the Firestore text fields) — this
+  // generic updater is for the rest of the profile form only.
+  const updateProfile = useCallback(
+    async (updates) => {
+      if (!user) return;
+      const { avatarUrl, ...rest } = updates;
+      void avatarUrl;
+      await updateAccount(rest);
+    },
+    [user, updateAccount]
   );
 
-  const updateProfile = (updates) => {
-    setProfile((current) => ({ ...current, ...updates }));
-  };
+  const uploadAvatar = useCallback(
+    async (file) => {
+      if (!user) return null;
+      const url = await profileService.uploadAvatar(user.uid, file);
+      setProfile((current) => ({ ...current, avatarUrl: url }));
+      return url;
+    },
+    [user]
+  );
 
-  return { profile, updateProfile };
+  const removeAvatar = useCallback(async () => {
+    if (!user) return;
+    await profileService.deleteAvatar(user.uid);
+    setProfile((current) => ({ ...current, avatarUrl: "" }));
+  }, [user]);
+
+  return { profile, updateProfile, uploadAvatar, removeAvatar, isLoading };
 }

@@ -6,7 +6,7 @@ import * as quizService from "../services/quizService";
 // submitted/feedback state, an optional countdown timer, grading, XP, and
 // the transition through question -> results -> (optional) review.
 export default function useQuiz(quiz, quizId) {
-  const { achievements, unlockAchievement } = useGame();
+  const { uid } = useGame();
 
   const [stage, setStage] = useState("question"); // "question" | "results" | "review"
   const [currentIndex, setCurrentIndex] = useState(0);
@@ -110,23 +110,26 @@ export default function useQuiz(quiz, quizId) {
 
   // Persist the attempt + cumulative questions-answered count exactly
   // once per completed attempt (not on every results<->review toggle).
+  // Both writes are fire-and-forget: GameContext's real-time listener on
+  // progress/{uid} picks up the questionsAnswered increment on its own,
+  // and the "100 questions answered" achievement check now lives
+  // centrally in checkAchievements.js (see GameContext.jsx) instead of
+  // here, since this write is async and can no longer return the new
+  // total synchronously the way the old localStorage version did.
   useEffect(() => {
     if (stage === "results" && results && !hasPersistedRef.current) {
-      quizService.addQuizAttempt(quizId, {
-        score: results.percentage,
-        passed: results.passed,
-        xpEarned: results.xpEarned,
-        timeTakenSeconds: results.timeTakenSeconds,
-        timestamp: new Date().toISOString(),
-      });
-
-      const totalAnswered = quizService.addQuestionsAnswered(
-        results.totalQuestions
-      );
       hasPersistedRef.current = true;
 
-      if (totalAnswered >= 100 && !achievements.includes("hundred_questions")) {
-        unlockAchievement("hundred_questions");
+      if (uid) {
+        quizService.addQuizAttempt(uid, quizId, {
+          score: results.percentage,
+          passed: results.passed,
+          xpEarned: results.xpEarned,
+          timeTakenSeconds: results.timeTakenSeconds,
+          timestamp: new Date().toISOString(),
+        });
+
+        quizService.addQuestionsAnswered(uid, results.totalQuestions);
       }
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps

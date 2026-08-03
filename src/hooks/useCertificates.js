@@ -1,4 +1,4 @@
-import { useEffect, useRef } from "react";
+import { useEffect, useRef, useState } from "react";
 import { useGame } from "../context/GameContext";
 import * as certificateService from "../services/certificateService";
 
@@ -10,29 +10,36 @@ const CERTIFICATE_BONUS_XP = 200;
 // notification fire as soon as completion is first detected, regardless
 // of which page the user happens to be on.
 export default function useCertificates({ isCourseComplete, courseName, studentName }) {
-  const { addXP, pushNotification } = useGame();
+  const { uid, addXP, pushNotification } = useGame();
   const hasCheckedRef = useRef(false);
+  const [certificate, setCertificate] = useState(null);
 
   useEffect(() => {
-    if (!isCourseComplete || hasCheckedRef.current) return;
+    if (!uid) return;
+
+    certificateService
+      .getCertificates(uid)
+      .then((certificates) => {
+        setCertificate(
+          certificates.find((cert) => cert.courseName === courseName) || null
+        );
+      });
+  }, [uid, courseName, isCourseComplete]);
+
+  useEffect(() => {
+    if (!uid || !isCourseComplete || hasCheckedRef.current) return;
     hasCheckedRef.current = true;
 
-    const { isNew } = certificateService.createCertificate({
-      courseName,
-      studentName,
-    });
-
-    if (isNew) {
-      addXP(CERTIFICATE_BONUS_XP);
-      pushNotification({ type: "certificate", title: courseName });
-    }
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [isCourseComplete]);
-
-  const certificate =
     certificateService
-      .getCertificates()
-      .find((cert) => cert.courseName === courseName) || null;
+      .createCertificate({ uid, courseName, studentName })
+      .then(({ isNew }) => {
+        if (isNew) {
+          addXP(CERTIFICATE_BONUS_XP);
+          pushNotification({ type: "certificate", title: courseName });
+        }
+      });
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [uid, isCourseComplete]);
 
   return {
     certificate,
