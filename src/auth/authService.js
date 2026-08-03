@@ -26,7 +26,8 @@ function saveUsers(users) {
 function stripPassword(user) {
   const { password, ...safeUser } = user;
   void password;
-  return safeUser;
+  // Defaults for accounts created before role/active existed.
+  return { role: "student", active: true, ...safeUser };
 }
 
 function readSession() {
@@ -68,6 +69,10 @@ export async function login(email, password, rememberMe) {
     throw new Error("Invalid email or password.");
   }
 
+  if (users[index].active === false) {
+    throw new Error("This account has been deactivated.");
+  }
+
   users[index] = { ...users[index], lastLoginAt: new Date().toISOString() };
   saveUsers(users);
 
@@ -89,12 +94,19 @@ export async function register(fullName, username, email, password) {
     throw new Error("This username is already taken.");
   }
 
+  // Bootstrap: the first account ever registered becomes admin (there's
+  // no backend to seed one otherwise). Every account after the first
+  // admin defaults to student.
+  const hasAdmin = users.some((u) => u.role === "admin");
+
   const newUser = {
     id: crypto.randomUUID(),
     fullName: fullName.trim(),
     username: username.trim(),
     email: email.trim(),
     password,
+    role: hasAdmin ? "student" : "admin",
+    active: true,
     createdAt: new Date().toISOString(),
     lastLoginAt: new Date().toISOString(),
   };
@@ -169,6 +181,38 @@ export async function changePassword(userId, currentPassword, newPassword) {
   saveUsers(users);
 
   return { success: true };
+}
+
+// --- Admin-facing operations ---
+
+export async function getAllUsers() {
+  return getUsers().map(stripPassword);
+}
+
+export async function updateUserRole(userId, role) {
+  const users = getUsers();
+  const index = users.findIndex((u) => u.id === userId);
+
+  if (index === -1) {
+    throw new Error("User not found.");
+  }
+
+  users[index] = { ...users[index], role };
+  saveUsers(users);
+  return stripPassword(users[index]);
+}
+
+export async function setUserActive(userId, active) {
+  const users = getUsers();
+  const index = users.findIndex((u) => u.id === userId);
+
+  if (index === -1) {
+    throw new Error("User not found.");
+  }
+
+  users[index] = { ...users[index], active };
+  saveUsers(users);
+  return stripPassword(users[index]);
 }
 
 // Not a Promise-returning "real" auth operation — pure introspection of
