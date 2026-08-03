@@ -15,6 +15,8 @@ import ProfileHeader from "../components/Profile/ProfileHeader";
 import EditProfile from "../components/Profile/EditProfile";
 import ProfileStats from "../components/Profile/ProfileStats";
 import Achievements from "../components/Profile/Achievements";
+import LearningActivity from "../components/Profile/LearningActivity";
+import LearningGoals from "../components/Profile/LearningGoals";
 import SkillBadge from "../components/SkillBadge/SkillBadge";
 import Button from "../components/Button/Button";
 
@@ -216,40 +218,21 @@ export default function Profile() {
         </div>
       </section>
 
-      {/* Learning Activity */}
-      <section className="mb-8">
-        <h2 className="text-xl font-display text-fedora-text mb-4">
-          Learning Activity
-        </h2>
-        <div className="bg-fedora-surface border border-fedora-border rounded-xl p-8 text-center">
-          <p className="text-4xl mb-3">🕒</p>
-          <p className="text-fedora-text font-display mb-1">
-            Activity timeline coming soon
-          </p>
-          <p className="text-fedora-muted text-sm">
-            FedoraQuest doesn't track dated activity history yet — this
-            section will show a real Today / Yesterday / This Week timeline
-            once that's built.
-          </p>
-        </div>
-      </section>
+      <LearningActivity
+        completedLessons={completedLessons.length}
+        completedLabs={completedLabs.length}
+        quizzesCompleted={quizzesCompleted}
+        streak={streak}
+      />
 
-      {/* Learning Goals */}
-      <section className="mb-8">
-        <h2 className="text-xl font-display text-fedora-text mb-4">
-          Learning Goals
-        </h2>
-        <div className="bg-fedora-surface border border-fedora-border rounded-xl p-8 text-center">
-          <p className="text-4xl mb-3">🎯</p>
-          <p className="text-fedora-text font-display mb-1">
-            Goal setting coming soon
-          </p>
-          <p className="text-fedora-muted text-sm">
-            Daily and weekly learning goals aren't implemented yet — this
-            section will show real progress rings once that feature is built.
-          </p>
-        </div>
-      </section>
+      <LearningGoals
+        lessonsCompleted={completedLessons.length}
+        totalLessons={lessons.length}
+        coursesCompleted={coursesCompleted}
+        totalCourses={modules.length}
+        nextLesson={nextLesson}
+        progressPercent={progressPercent}
+      />
 
       {/* Quick Actions */}
       <section className="mb-8">
