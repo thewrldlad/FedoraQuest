@@ -19,6 +19,19 @@ export const DEFAULT_PROFILE = {
   learningLevel: "Linux Beginner",
 };
 
+function profileFromUser(user) {
+  return {
+    fullName: user.fullName || "",
+    username: user.username || "",
+    email: user.email || "",
+    bio: user.bio || "",
+    avatarUrl: user.photoURL || "",
+    bannerUrl: user.bannerUrl || "",
+    country: user.country || "",
+    learningLevel: user.learningLevel || DEFAULT_PROFILE.learningLevel,
+  };
+}
+
 export default function useProfile() {
   const { user, updateAccount } = useAuth();
   const [profile, setProfile] = useState(DEFAULT_PROFILE);
@@ -31,17 +44,32 @@ export default function useProfile() {
       return;
     }
 
-    setProfile({
-      fullName: user.fullName || "",
-      username: user.username || "",
-      email: user.email || "",
-      bio: user.bio || "",
-      avatarUrl: user.photoURL || "",
-      bannerUrl: user.bannerUrl || "",
-      country: user.country || "",
-      learningLevel: user.learningLevel || DEFAULT_PROFILE.learningLevel,
-    });
-    setIsLoading(false);
+    let isCurrent = true;
+
+    // AuthProvider loads the profile when a session begins, but image uploads
+    // go directly through profileService. Reading the current document here
+    // means a remounted Profile page always displays the latest avatar/banner
+    // from Firestore rather than a stale AuthContext snapshot.
+    setProfile(profileFromUser(user));
+    setIsLoading(true);
+
+    profileService
+      .getProfile(user.uid)
+      .then((storedProfile) => {
+        if (isCurrent && storedProfile) {
+          setProfile(profileFromUser({ ...user, ...storedProfile }));
+        }
+      })
+      .catch(() => {
+        // Keep the AuthContext-backed profile visible if a refresh fails.
+      })
+      .finally(() => {
+        if (isCurrent) setIsLoading(false);
+      });
+
+    return () => {
+      isCurrent = false;
+    };
   }, [user]);
 
   // Avatar/banner changes go through uploadAvatar/removeAvatar/

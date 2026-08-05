@@ -19,12 +19,19 @@ import {
   setPersistence,
   browserLocalPersistence,
   browserSessionPersistence,
+  GoogleAuthProvider,
+  signInWithPopup,
+  sendEmailVerification,
+  reload,
 } from "firebase/auth";
 import { auth } from "../firebase/firebase";
 import * as profileService from "../services/profileService";
 import * as progressService from "../services/progressService";
 
 const REMEMBER_ME_KEY = "fedoraquest_remember_me";
+const googleProvider = new GoogleAuthProvider();
+
+googleProvider.setCustomParameters({ prompt: "select_account" });
 
 function friendlyAuthError(error) {
   const code = error?.code || "";
@@ -48,6 +55,14 @@ function friendlyAuthError(error) {
       return "Network error — check your connection and try again.";
     case "auth/requires-recent-login":
       return "Please log out and back in, then try again.";
+    case "auth/popup-closed-by-user":
+      return "Google sign-in was cancelled. Please try again.";
+    case "auth/popup-blocked":
+      return "Your browser blocked the Google sign-in window. Allow pop-ups and try again.";
+    case "auth/account-exists-with-different-credential":
+      return "An account already exists with this email. Sign in with your email and password instead.";
+    case "auth/operation-not-allowed":
+      return "This sign-in method is not enabled for this Firebase project.";
     default:
       return error?.message || "Something went wrong. Please try again.";
   }
@@ -59,8 +74,34 @@ async function buildUserFromFirebaseUser(firebaseUser) {
     id: firebaseUser.uid,
     uid: firebaseUser.uid,
     email: firebaseUser.email,
+    emailVerified: firebaseUser.emailVerified,
     ...profile,
   };
+}
+
+function defaultUsername(firebaseUser) {
+  return `learner_${firebaseUser.uid.slice(0, 10)}`;
+}
+
+function defaultFullName(firebaseUser) {
+  if (firebaseUser.displayName?.trim()) return firebaseUser.displayName.trim();
+  if (firebaseUser.email) return firebaseUser.email.split("@")[0];
+  return "FedoraQuest Learner";
+}
+
+async function provisionGoogleAccount(firebaseUser) {
+  const hasAdmin = await profileService.hasAdminUser();
+  const profile = await profileService.ensureProfileDocument(firebaseUser.uid, {
+    fullName: defaultFullName(firebaseUser),
+    username: defaultUsername(firebaseUser),
+    email: firebaseUser.email || "",
+    role: hasAdmin ? "student" : "admin",
+    active: true,
+    lastLoginAt: new Date().toISOString(),
+  });
+
+  await progressService.ensureProgressDocument(firebaseUser.uid);
+  return profile;
 }
 
 export async function login(email, password, rememberMe) {
@@ -90,10 +131,13 @@ export async function login(email, password, rememberMe) {
     });
 
     return buildUserFromFirebaseUser(credential.user);
-  } catch (error) {
-    if (error.message === "This account has been deactivated.") throw error;
-    throw new Error(friendlyAuthError(error));
-  }
+} catch (error) {
+  console.error("Firebase Login Error:", error);
+
+  if (error.message === "This account has been deactivated.") throw error;
+
+  throw new Error(friendlyAuthError(error));
+}
 }
 
 export async function register(fullName, username, email, password) {
@@ -137,7 +181,42 @@ export async function register(fullName, username, email, password) {
 
   localStorage.setItem(REMEMBER_ME_KEY, "true");
 
-  return buildUserFromFirebaseUser(credential.user);
+  let verificationEmailSent = false;
+  try {
+    await sendEmailVerification(credential.user);
+    verificationEmailSent = true;
+  } catch {
+    // Registration remains successful if an email provider has a temporary
+    // delivery issue. The authenticated user can retry from the banner.
+  }
+
+  return {
+    ...(await buildUserFromFirebaseUser(credential.user)),
+    verificationEmailSent,
+  };
+}
+
+export async function loginWithGoogle() {
+  try {
+    await setPersistence(auth, browserLocalPersistence);
+    const credential = await signInWithPopup(auth, googleProvider);
+    const profile = await provisionGoogleAccount(credential.user);
+
+    if (profile.active === false) {
+      await signOut(auth);
+      throw new Error("This account has been deactivated.");
+    }
+
+    await profileService.updateProfile(credential.user.uid, {
+      lastLoginAt: new Date().toISOString(),
+    });
+    localStorage.setItem(REMEMBER_ME_KEY, "true");
+
+    return buildUserFromFirebaseUser(credential.user);
+  } catch (error) {
+    if (error.message === "This account has been deactivated.") throw error;
+    throw new Error(friendlyAuthError(error));
+  }
 }
 
 export async function logout() {
@@ -263,6 +342,31 @@ export async function requestPasswordReset(email) {
     }
   }
   return { success: true };
+}
+
+export async function resendEmailVerification() {
+  const user = auth.currentUser;
+  if (!user) throw new Error("You must be logged in to verify your email.");
+  if (user.emailVerified) return { alreadyVerified: true };
+
+  try {
+    await sendEmailVerification(user);
+    return { alreadyVerified: false };
+  } catch (error) {
+    throw new Error(friendlyAuthError(error));
+  }
+}
+
+export async function refreshEmailVerification() {
+  const user = auth.currentUser;
+  if (!user) throw new Error("You must be logged in to verify your email.");
+
+  try {
+    await reload(user);
+    return buildUserFromFirebaseUser(auth.currentUser);
+  } catch (error) {
+    throw new Error(friendlyAuthError(error));
+  }
 }
 
 // Pure helper, not a real auth operation — no async/storage needed.

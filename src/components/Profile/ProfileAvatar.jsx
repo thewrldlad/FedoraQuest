@@ -70,7 +70,7 @@ export default function ProfileAvatar({
 
   return (
     <div className="relative shrink-0">
-      <div className="group relative w-28 h-28 sm:w-36 sm:h-36 rounded-full ring-4 ring-fedora-surface shadow-lg">
+      <div className="group relative w-28 h-28 sm:w-36 sm:h-36 rounded-full ring-[5px] ring-fedora-surface border border-fedora-border/70 shadow-xl shadow-fedora-bg/40">
         {showImage ? (
           <img
             src={value}
@@ -84,31 +84,12 @@ export default function ProfileAvatar({
           </div>
         )}
 
-        {/* Online status — always true today since only the account
-            owner ever sees their own header; becomes a real presence
-            signal once public profiles/viewing-other-users exists. */}
-        <span
-          className="absolute bottom-1 right-1 w-4 h-4 sm:w-5 sm:h-5 rounded-full bg-green-500 ring-2 ring-fedora-surface"
-          role="status"
-          aria-label="Online"
-          title="Online"
-        />
-
-        <button
-          type="button"
-          onClick={openFilePicker}
-          aria-label="Change profile picture"
-          className="absolute inset-0 rounded-full flex items-center justify-center bg-black/0 group-hover:bg-black/50 focus-visible:bg-black/50 text-white opacity-0 group-hover:opacity-100 focus-visible:opacity-100 transition-all duration-200"
-        >
-          <Camera size={26} />
-        </button>
-
         {showImage && (
           <button
             type="button"
             onClick={handleRemove}
             aria-label="Remove profile picture"
-            className="absolute -top-1 -right-1 w-6 h-6 rounded-full bg-fedora-surface border border-fedora-border text-fedora-muted hover:text-red-400 hover:border-red-400 flex items-center justify-center opacity-0 group-hover:opacity-100 focus-visible:opacity-100 transition-all duration-200"
+            className="absolute -top-1 -right-1 flex h-7 w-7 items-center justify-center rounded-full border border-fedora-border bg-fedora-surface text-fedora-muted shadow-md transition-colors hover:border-red-400 hover:text-red-400 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-fedora-accent-light"
           >
             <X size={14} />
           </button>
@@ -120,6 +101,16 @@ export default function ProfileAvatar({
           </div>
         )}
       </div>
+
+      <button
+        type="button"
+        onClick={openFilePicker}
+        aria-label="Change profile picture"
+        className="absolute -bottom-1 -right-1 flex h-10 w-10 items-center justify-center rounded-full border-4 border-fedora-surface bg-fedora-accent text-white shadow-lg transition-transform hover:scale-105 hover:bg-fedora-accent-light focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-fedora-accent-light"
+        title="Change profile picture"
+      >
+        <Camera size={17} aria-hidden="true" />
+      </button>
 
       <input
         ref={fileInputRef}

@@ -54,15 +54,19 @@ export default function ProfileActions({ xp, streak, onEditClick }) {
   };
 
   return (
-    <div className="flex items-center gap-2 shrink-0">
-      <Button variant="secondary" onClick={onEditClick}>
+    <div className="flex flex-wrap items-center gap-2 shrink-0 lg:justify-end">
+      <Button
+        variant="secondary"
+        onClick={onEditClick}
+        className="border-fedora-border bg-fedora-bg/40 hover:border-fedora-accent-light"
+      >
         <span className="flex items-center gap-2">
           <Pencil size={16} aria-hidden="true" />
           Edit Profile
         </span>
       </Button>
 
-      <Button onClick={handleShare}>
+      <Button onClick={handleShare} className="shadow-md shadow-fedora-accent/25">
         <span className="flex items-center gap-2">
           <Share2 size={16} aria-hidden="true" />
           {copied ? "Copied!" : "Share Profile"}
@@ -76,7 +80,7 @@ export default function ProfileActions({ xp, streak, onEditClick }) {
           aria-haspopup="menu"
           aria-expanded={menuOpen}
           aria-label="More profile actions"
-          className="w-10 h-10 flex items-center justify-center rounded-lg border border-fedora-border text-fedora-text hover:bg-fedora-border transition-colors"
+          className="w-10 h-10 flex items-center justify-center rounded-lg border border-fedora-border bg-fedora-bg/40 text-fedora-text hover:border-fedora-accent-light hover:bg-fedora-border transition-colors"
         >
           <MoreHorizontal size={18} />
         </button>

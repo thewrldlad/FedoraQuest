@@ -15,6 +15,7 @@ import {
   query,
   where,
   limit,
+  runTransaction,
 } from "firebase/firestore";
 import {
   ref,
@@ -68,6 +69,32 @@ export async function createProfileDocument(uid, fields) {
   return { id: uid, uid, ...document };
 }
 
+// Used by federated sign-in, where Firebase Auth can authenticate a user
+// before this application has ever created its matching profile document.
+// The transaction keeps first-time sign-ins from creating two profiles in
+// different tabs or devices.
+export async function ensureProfileDocument(uid, fields) {
+  const now = new Date().toISOString();
+  const document = {
+    ...DEFAULT_PROFILE_FIELDS,
+    ...fields,
+    createdAt: now,
+    updatedAt: now,
+  };
+
+  return runTransaction(db, async (transaction) => {
+    const profileRef = userDocRef(uid);
+    const snapshot = await transaction.get(profileRef);
+
+    if (snapshot.exists()) {
+      return { id: uid, uid, ...snapshot.data() };
+    }
+
+    transaction.set(profileRef, document);
+    return { id: uid, uid, ...document };
+  });
+}
+
 export async function updateProfile(uid, updates) {
   await updateDoc(userDocRef(uid), {
     ...updates,
@@ -110,7 +137,7 @@ export async function getAllProfiles() {
 // --- Avatar (Firebase Storage) ---
 
 function avatarPath(uid, extension) {
-  return `avatars/${uid}/avatar.${extension}`;
+  return `avatars/${uid}/avatar-${Date.now()}.${extension}`;
 }
 
 function extensionFromMimeType(type) {
@@ -119,10 +146,8 @@ function extensionFromMimeType(type) {
   return "jpg";
 }
 
-// Uploading to the same fixed path each time (rather than a new
-// filename) is what makes "Replace Photo" just work — the new file
-// overwrites the old one, no cleanup step needed.
 export async function uploadAvatar(uid, file) {
+  const previousProfile = await getProfile(uid);
   const path = avatarPath(uid, extensionFromMimeType(file.type));
   const storageRef = ref(storage, path);
 
@@ -130,6 +155,16 @@ export async function uploadAvatar(uid, file) {
   const downloadUrl = await getDownloadURL(storageRef);
 
   await updateProfile(uid, { photoURL: downloadUrl });
+
+  if (previousProfile?.photoURL && previousProfile.photoURL !== downloadUrl) {
+    try {
+      await deleteObject(ref(storage, previousProfile.photoURL));
+    } catch {
+      // The new image is already the active profile value. A failed old-file
+      // cleanup must not make a successful upload look like a failure.
+    }
+  }
+
   return downloadUrl;
 }
 
@@ -149,15 +184,12 @@ export async function deleteAvatar(uid) {
 }
 
 // --- Banner / cover image (Firebase Storage) ---
-// Same fixed-path-overwrite pattern as the avatar above, in its own
-// `banners/{uid}/` folder so the two never collide in Storage or in
-// storage.rules.
-
 function bannerPath(uid, extension) {
-  return `banners/${uid}/banner.${extension}`;
+  return `banners/${uid}/banner-${Date.now()}.${extension}`;
 }
 
 export async function uploadBanner(uid, file) {
+  const previousProfile = await getProfile(uid);
   const path = bannerPath(uid, extensionFromMimeType(file.type));
   const storageRef = ref(storage, path);
 
@@ -165,6 +197,15 @@ export async function uploadBanner(uid, file) {
   const downloadUrl = await getDownloadURL(storageRef);
 
   await updateProfile(uid, { bannerUrl: downloadUrl });
+
+  if (previousProfile?.bannerUrl && previousProfile.bannerUrl !== downloadUrl) {
+    try {
+      await deleteObject(ref(storage, previousProfile.bannerUrl));
+    } catch {
+      // As above, the Firestore field already points at the new image.
+    }
+  }
+
   return downloadUrl;
 }
 

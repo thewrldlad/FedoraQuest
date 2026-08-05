@@ -58,7 +58,7 @@ export default function ProfileBanner({ value, onUpload, onRemove }) {
   };
 
   return (
-    <div className="group relative h-32 sm:h-44 md:h-52 w-full overflow-hidden rounded-t-xl bg-gradient-to-r from-fedora-accent via-fedora-accent-light to-fedora-accent">
+    <div className="group relative h-36 sm:h-52 lg:h-60 w-full overflow-hidden rounded-t-2xl bg-gradient-to-br from-fedora-accent via-[#28558c] to-fedora-bg">
       {showImage && (
         <img
           src={value}
@@ -68,19 +68,30 @@ export default function ProfileBanner({ value, onUpload, onRemove }) {
         />
       )}
 
-      {/* Gradient overlay for readability of the avatar/name that sit
-          on top of the banner's bottom edge. */}
-      <div className="absolute inset-0 bg-gradient-to-t from-fedora-surface/90 via-fedora-surface/10 to-transparent" />
+      <div className="absolute inset-0 bg-gradient-to-t from-fedora-surface via-fedora-surface/25 to-transparent" />
+      <div className="absolute inset-0 bg-[radial-gradient(circle_at_12%_10%,rgba(127,184,232,0.45),transparent_35%),radial-gradient(circle_at_82%_18%,rgba(60,110,180,0.55),transparent_30%)]" />
 
-      <div className="absolute top-3 right-3 flex gap-2 opacity-0 group-hover:opacity-100 focus-within:opacity-100 transition-opacity duration-200">
+      <div className="absolute left-5 bottom-5 sm:left-8 sm:bottom-7">
+        <p className="text-[11px] font-semibold uppercase tracking-[0.18em] text-white/70">
+          FedoraQuest
+        </p>
+        <p className="mt-1 text-sm font-medium text-white/90">
+          Learning profile
+        </p>
+      </div>
+
+      <div className="absolute top-3 right-3 flex gap-2 sm:top-4 sm:right-4">
         <button
           type="button"
           onClick={openFilePicker}
           aria-label={value ? "Change cover banner" : "Upload cover banner"}
-          className="flex items-center gap-2 rounded-lg bg-fedora-bg/80 hover:bg-fedora-bg px-3 py-1.5 text-xs text-fedora-text border border-fedora-border transition-colors"
+          className="flex items-center gap-2 rounded-lg border border-white/15 bg-fedora-bg/85 px-3 py-2 text-xs font-medium text-fedora-text shadow-lg backdrop-blur-sm transition-colors hover:bg-fedora-bg focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-fedora-accent-light"
         >
           <Camera size={14} />
-          {value ? "Change Banner" : "Upload Banner"}
+          <span className="hidden sm:inline">
+            {value ? "Change cover" : "Add cover"}
+          </span>
+          <span className="sm:hidden">Cover</span>
         </button>
 
         {value && (
@@ -88,7 +99,7 @@ export default function ProfileBanner({ value, onUpload, onRemove }) {
             type="button"
             onClick={handleRemove}
             aria-label="Remove cover banner"
-            className="flex items-center justify-center rounded-lg bg-fedora-bg/80 hover:bg-fedora-bg w-8 h-8 text-fedora-muted hover:text-red-400 border border-fedora-border transition-colors"
+          className="flex h-9 w-9 items-center justify-center rounded-lg border border-white/15 bg-fedora-bg/85 text-fedora-muted shadow-lg backdrop-blur-sm transition-colors hover:bg-fedora-bg hover:text-red-400 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-fedora-accent-light"
           >
             <X size={14} />
           </button>

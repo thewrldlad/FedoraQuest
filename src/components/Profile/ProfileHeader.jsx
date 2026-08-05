@@ -34,15 +34,15 @@ export default function ProfileHeader({
   const level = getLevelInfo(xp);
 
   return (
-    <section className="bg-fedora-surface border border-fedora-border rounded-xl shadow-sm mb-8 overflow-hidden">
+    <section className="bg-fedora-surface border border-fedora-border rounded-2xl shadow-xl shadow-fedora-bg/20 mb-8 overflow-hidden">
       <ProfileBanner
         value={profile.bannerUrl}
         onUpload={onUploadBanner}
         onRemove={onRemoveBanner}
       />
 
-      <div className="px-4 sm:px-8 pb-8">
-        <div className="flex flex-col sm:flex-row sm:items-start gap-5">
+      <div className="relative px-5 sm:px-8 lg:px-10 pb-8">
+        <div className="flex flex-col sm:flex-row sm:items-start gap-5 lg:gap-7">
           <div className="-mt-14 sm:-mt-16">
             <ProfileAvatar
               value={profile.avatarUrl}
@@ -52,7 +52,7 @@ export default function ProfileHeader({
             />
           </div>
 
-          <div className="flex-1 flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4 min-w-0 mt-1 sm:mt-4">
+          <div className="flex-1 flex flex-col lg:flex-row lg:items-start lg:justify-between gap-5 min-w-0 pt-2 sm:pt-5">
             <UserIdentity
               profile={profile}
               xp={xp}
@@ -64,9 +64,10 @@ export default function ProfileHeader({
           </div>
         </div>
 
-        <ProfileCompletion profile={profile} />
-
-        <FeaturedBadges achievements={achievements} />
+        <div className="grid lg:grid-cols-[minmax(0,1fr)_minmax(18rem,0.7fr)] gap-5 mt-7 pt-6 border-t border-fedora-border/80">
+          <FeaturedBadges achievements={achievements} />
+          <ProfileCompletion profile={profile} />
+        </div>
 
         <QuickStats
           levelNumber={level.levelNumber}

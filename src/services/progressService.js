@@ -19,6 +19,7 @@ import {
   setDoc,
   updateDoc,
   onSnapshot,
+  runTransaction,
 } from "firebase/firestore";
 import { db } from "../firebase/firebase";
 
@@ -63,6 +64,26 @@ export async function createProgressDocument(uid) {
   };
   await setDoc(progressDocRef(uid), document);
   return document;
+}
+
+// Federated providers may sign a user in before this app has created its
+// progress document. Create it exactly once without overwriting any data
+// another active session has already recorded.
+export async function ensureProgressDocument(uid) {
+  const document = {
+    ...DEFAULT_PROGRESS,
+    firstSeenDate: formatDate(new Date()),
+  };
+
+  return runTransaction(db, async (transaction) => {
+    const progressRef = progressDocRef(uid);
+    const snapshot = await transaction.get(progressRef);
+
+    if (snapshot.exists()) return snapshot.data();
+
+    transaction.set(progressRef, document);
+    return document;
+  });
 }
 
 export async function getProgress(uid) {

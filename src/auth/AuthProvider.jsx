@@ -36,6 +36,12 @@ export function AuthProvider({ children }) {
     return newUser;
   };
 
+  const loginWithGoogle = async () => {
+    const loggedInUser = await authService.loginWithGoogle();
+    setUser(loggedInUser);
+    return loggedInUser;
+  };
+
   const logout = async () => {
     await authService.logout();
     setUser(null);
@@ -43,6 +49,14 @@ export function AuthProvider({ children }) {
 
   const requestPasswordReset = async (email) => {
     return authService.requestPasswordReset(email);
+  };
+
+  const resendEmailVerification = () => authService.resendEmailVerification();
+
+  const refreshEmailVerification = async () => {
+    const refreshedUser = await authService.refreshEmailVerification();
+    setUser(refreshedUser);
+    return refreshedUser;
   };
 
   const updateAccount = async (updates) => {
@@ -64,8 +78,11 @@ export function AuthProvider({ children }) {
         isLoading,
         login,
         register,
+        loginWithGoogle,
         logout,
         requestPasswordReset,
+        resendEmailVerification,
+        refreshEmailVerification,
         updateAccount,
         changePassword,
         getSessionInfo,
