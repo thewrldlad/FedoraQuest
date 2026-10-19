@@ -40,7 +40,7 @@ export default function UserMenu({ collapsed, direction = "up" }) {
   const handleLogout = async () => {
     await logout();
     setOpen(false);
-    navigate("/login", { replace: true });
+    navigate("/", { replace: true });
   };
 
   return (
@@ -111,14 +111,17 @@ export default function UserMenu({ collapsed, direction = "up" }) {
             </Link>
           )}
 
-          <div className="border-t border-fedora-border my-1" />
-
-          <button
-            onClick={handleLogout}
-            className="w-full flex items-center gap-2 px-4 py-2 text-sm text-fedora-text hover:bg-fedora-border transition-colors"
-          >
-            <LogOut size={16} /> Logout
-          </button>
+          {!user.isGuest && (
+            <>
+              <div className="border-t border-fedora-border my-1" />
+              <button
+                onClick={handleLogout}
+                className="w-full flex items-center gap-2 px-4 py-2 text-sm text-fedora-text hover:bg-fedora-border transition-colors"
+              >
+                <LogOut size={16} /> Logout
+              </button>
+            </>
+          )}
         </div>
       )}
     </div>

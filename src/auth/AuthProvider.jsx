@@ -2,8 +2,21 @@ import { useState, useEffect } from "react";
 import { AuthContext } from "./AuthContext";
 import * as authService from "./authService";
 
+// Visitors can use FedoraQuest without creating an account. A guest-shaped
+// user keeps optional profile and settings screens safe to render while the
+// services correctly avoid persisting data without a Firebase uid.
+const GUEST_USER = {
+  id: null,
+  uid: null,
+  fullName: "Guest learner",
+  username: "guest",
+  email: "",
+  role: "student",
+  isGuest: true,
+};
+
 export function AuthProvider({ children }) {
-  const [user, setUser] = useState(null);
+  const [user, setUser] = useState(GUEST_USER);
   const [isLoading, setIsLoading] = useState(true);
 
   // Firebase Authentication is meant to be consumed via a persistent
@@ -12,7 +25,7 @@ export function AuthProvider({ children }) {
   // login/logout, so `user` stays correct without AuthProvider polling.
   useEffect(() => {
     const unsubscribe = authService.onAuthStateChange((currentUser) => {
-      setUser(currentUser);
+      setUser(currentUser || GUEST_USER);
       setIsLoading(false);
     });
 
@@ -44,7 +57,7 @@ export function AuthProvider({ children }) {
 
   const logout = async () => {
     await authService.logout();
-    setUser(null);
+    setUser(GUEST_USER);
   };
 
   const requestPasswordReset = async (email) => {

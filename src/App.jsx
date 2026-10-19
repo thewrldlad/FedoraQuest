@@ -1,8 +1,6 @@
-import { Routes, Route, Outlet } from "react-router-dom";
+import { Navigate, Routes, Route, Outlet } from "react-router-dom";
 
 import Sidebar from "./components/Sidebar/Sidebar";
-import ProtectedRoute from "./auth/ProtectedRoute";
-import PublicOnlyRoute from "./auth/PublicOnlyRoute";
 import RoleProtectedRoute from "./auth/RoleProtectedRoute";
 import AchievementNotification from "./components/Achievements/AchievementNotification";
 import AdminLayout from "./components/Admin/AdminLayout";
@@ -16,9 +14,6 @@ import Achievements from "./pages/Achievements";
 import Certificates from "./pages/Certificates";
 import Profile from "./pages/Profile";
 import Settings from "./pages/Settings";
-import Login from "./pages/Login";
-import Register from "./pages/Register";
-import ForgotPassword from "./pages/ForgotPassword";
 import Unauthorized from "./pages/Unauthorized";
 
 import AdminDashboard from "./pages/admin/Dashboard";
@@ -48,38 +43,7 @@ function AppLayout() {
 function App() {
   return (
     <Routes>
-      <Route
-        path="/login"
-        element={
-          <PublicOnlyRoute>
-            <Login />
-          </PublicOnlyRoute>
-        }
-      />
-      <Route
-        path="/register"
-        element={
-          <PublicOnlyRoute>
-            <Register />
-          </PublicOnlyRoute>
-        }
-      />
-      <Route
-        path="/forgot-password"
-        element={
-          <PublicOnlyRoute>
-            <ForgotPassword />
-          </PublicOnlyRoute>
-        }
-      />
-
-      <Route
-        element={
-          <ProtectedRoute>
-            <AppLayout />
-          </ProtectedRoute>
-        }
-      >
+      <Route element={<AppLayout />}>
         <Route path="/" element={<Dashboard />} />
         <Route path="/course" element={<Course />} />
         <Route path="/lesson/:id" element={<Lesson />} />
@@ -91,6 +55,8 @@ function App() {
         <Route path="/settings" element={<Settings />} />
         <Route path="/unauthorized" element={<Unauthorized />} />
       </Route>
+
+      <Route path="*" element={<Navigate to="/" replace />} />
 
       <Route
         path="/admin"
