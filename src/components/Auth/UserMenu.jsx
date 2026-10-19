@@ -78,14 +78,6 @@ export default function UserMenu({ collapsed, direction = "up" }) {
           </Link>
 
           <Link
-            to="/achievements"
-            onClick={() => setOpen(false)}
-            className="flex items-center gap-2 px-4 py-2 text-sm text-fedora-text hover:bg-fedora-border transition-colors"
-          >
-            <Award size={16} /> Achievements
-          </Link>
-
-          <Link
             to="/certificates"
             onClick={() => setOpen(false)}
             className="flex items-center gap-2 px-4 py-2 text-sm text-fedora-text hover:bg-fedora-border transition-colors"

@@ -53,12 +53,6 @@ const navGroups = [
   label: "Track",
   items: [
     {
-      id: "achievements",
-      label: "Achievements",
-      path: "/achievements",
-      icon: Award,
-    },
-    {
       id: "profile",
       label: "Profile",
       path: "/profile",

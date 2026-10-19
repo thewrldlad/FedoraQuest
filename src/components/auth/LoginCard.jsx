@@ -56,13 +56,13 @@ export default function LoginCard() {
       "
     >
       <h1 className="text-4xl font-black text-white">
-        Welcome Back
-      </h1>
+   FedoraQuest
+</h1>
 
-      <p className="mt-3 text-gray-300">
-        Continue your FedoraQuest journey.
-      </p>
-
+<p className="mt-3 text-gray-300">
+  Access your courses, labs, and learning progress.
+</p>
+      
       <form
         onSubmit={handleSubmit}
         className="mt-8 space-y-5"

@@ -1,14 +1,11 @@
 import Header from "../components/Header/Header";
+import ContinueLearning from "../components/Progress/ContinueLearning";
 import ProgressCard from "../components/ProgressCard/ProgressCard";
 import RoadmapCard from "../components/RoadmapCard/RoadmapCard";
-import XPCard from "../components/XPCard/XPCard";
-import ContinueLearning from "../components/Progress/ContinueLearning";
+
 import useCourseProgress from "../hooks/useCourseProgress";
 
-import { useGame } from "../context/GameContext";
-
 export default function Dashboard() {
-  const { streak } = useGame();
   const progress = useCourseProgress();
 
   return (
@@ -17,34 +14,34 @@ export default function Dashboard() {
 
       <ContinueLearning progress={progress} />
 
-      <section className="grid grid-cols-3 gap-4">
+      <section className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-4 gap-5 mt-8">
         <ProgressCard
-          title="Progress"
+          title="Lessons Completed"
+          value={progress.completedLessonsCount}
+          subtitle={`${progress.totalLessons} total lessons`}
+        />
+
+        <ProgressCard
+          title="Course Progress"
           value={`${progress.courseCompletionPercent}%`}
-          subtitle="Course completed"
+          subtitle="Learning progress"
         />
 
         <ProgressCard
-          title="Current Module"
-          value="Terminal"
-          subtitle="Linux Fundamentals"
+          title="Modules Completed"
+          value={progress.modulesCompleted}
+          subtitle={`${progress.totalModules} modules`}
         />
 
         <ProgressCard
-          title="Study Streak"
-          value={`${streak} Days`}
-          subtitle="Keep learning daily"
+          title="Remaining Lessons"
+          value={progress.remainingLessons}
+          subtitle="Continue learning"
         />
       </section>
 
-      <section className="grid grid-cols-3 gap-6 mt-8">
-        <div className="col-span-2">
-          <RoadmapCard />
-        </div>
-
-        <div>
-          <XPCard />
-        </div>
+      <section className="mt-8">
+        <RoadmapCard />
       </section>
     </>
   );

@@ -2,7 +2,6 @@ import { Navigate, Routes, Route, Outlet } from "react-router-dom";
 
 import Sidebar from "./components/Sidebar/Sidebar";
 import RoleProtectedRoute from "./auth/RoleProtectedRoute";
-import AchievementNotification from "./components/Achievements/AchievementNotification";
 import AdminLayout from "./components/Admin/AdminLayout";
 
 import Dashboard from "./pages/Dashboard";
@@ -10,7 +9,6 @@ import Course from "./pages/Course";
 import Labs from "./pages/Labs";
 import Commands from "./pages/Commands";
 import Lesson from "./pages/Lesson";
-import Achievements from "./pages/Achievements";
 import Certificates from "./pages/Certificates";
 import Profile from "./pages/Profile";
 import Settings from "./pages/Settings";
@@ -35,7 +33,6 @@ function AppLayout() {
         <Outlet />
       </main>
 
-      <AchievementNotification />
     </div>
   );
 }
@@ -49,7 +46,6 @@ function App() {
         <Route path="/lesson/:id" element={<Lesson />} />
         <Route path="/labs" element={<Labs />} />
         <Route path="/commands" element={<Commands />} />
-        <Route path="/achievements" element={<Achievements />} />
         <Route path="/certificates" element={<Certificates />} />
         <Route path="/profile" element={<Profile />} />
         <Route path="/settings" element={<Settings />} />

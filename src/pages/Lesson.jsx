@@ -12,7 +12,11 @@ export default function Lesson() {
   const navigate = useNavigate();
   const { id } = useParams();
   const { completedLessons, quizResults, recordQuizResult } = useGame();
-  const { markLessonComplete, markLessonOpened } = useCourseProgress();
+  const { 
+  markLessonComplete, 
+  markLessonIncomplete, 
+  markLessonOpened 
+} = useCourseProgress();
 
   const [quizActive, setQuizActive] = useState(false);
   const [quizKey, setQuizKey] = useState(0);
@@ -43,11 +47,16 @@ const quiz = quizzes[lesson.id];
 const quizResult = quizResults[lesson.id];
 const content = lessonContent[lesson.id];
 
-const completeLesson = (xpOverride = null) => {
-  markLessonComplete(lesson.id, xpOverride);
+
+const toggleLessonCompletion = () => {
+  if (completedLessons.includes(lesson.id)) {
+    markLessonIncomplete(lesson.id);
+  } else {
+    markLessonComplete(lesson.id);
+  }
+
   navigate("/");
 };
-
 const startQuiz = () => {
   setQuizKey((current) => current + 1);
   setQuizActive(true);
@@ -99,13 +108,12 @@ const actionArea = quiz ? (
   </div>
 ) : (
   <div className="mt-8">
-    <Button
-      disabled={isCompleted}
-      onClick={() => completeLesson()}
-      variant={isCompleted ? "success" : "primary"}
-    >
-      {isCompleted ? "✓ Lesson Completed" : "Mark Lesson Complete"}
-    </Button>
+   <Button
+  onClick={() => toggleLessonCompletion()}
+  variant={isCompleted ? "success" : "primary"}
+>
+  {isCompleted ? "✓ Completed - Click to Undo" : "Mark Lesson Complete"}
+</Button>
   </div>
 );
 

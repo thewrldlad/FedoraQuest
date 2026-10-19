@@ -25,24 +25,24 @@ export default function AuthLayout({ children }) {
         <source src="/videos/login-bg.mp4" type="video/mp4" />
       </video>
 
-      {/* Dark Overlay */}
+      {/* Overlay */}
       <div className="absolute inset-0 bg-gradient-to-br from-black/80 via-black/55 to-blue-950/60" />
 
       {/* Content */}
       <div className="relative z-10 grid min-h-screen lg:grid-cols-2">
 
-        {/* LEFT SIDE */}
-        <div className="hidden lg:flex flex-col justify-between p-16">
+        {/* LEFT SIDE (Desktop only) */}
+        <div className="hidden lg:flex flex-col justify-between px-16 py-12">
 
           <Logo size="lg" />
 
-          <div className="max-w-lg">
+          <div className="max-w-xl">
 
-            <h1 className="text-6xl font-black leading-tight">
+            <h1 className="text-5xl xl:text-6xl font-black leading-tight">
               Master Fedora Linux.
             </h1>
 
-            <p className="mt-6 text-xl leading-relaxed text-gray-300">
+            <p className="mt-6 text-lg xl:text-xl leading-relaxed text-gray-300">
               Learn Fedora through interactive lessons,
               hands-on labs, real-world projects and
               command-line practice.
@@ -64,8 +64,18 @@ export default function AuthLayout({ children }) {
         </div>
 
         {/* RIGHT SIDE */}
-        <div className="flex items-center justify-center p-8">
-          {children}
+        <div className="
+          flex
+          items-center
+          justify-center
+          px-5
+          py-10
+          sm:px-8
+          lg:px-12
+        ">
+          <div className="w-full max-w-md">
+            {children}
+          </div>
         </div>
 
       </div>
@@ -80,8 +90,10 @@ function Feature({ text }) {
 
       <div className="h-2.5 w-2.5 rounded-full bg-cyan-400 shadow-[0_0_12px_rgba(34,211,238,.8)]" />
 
-      <span className="text-lg">{text}</span>
+      <span className="text-lg">
+        {text}
+      </span>
 
     </div>
-  );
+ );
 }

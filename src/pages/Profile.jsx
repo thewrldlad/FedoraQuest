@@ -5,16 +5,13 @@ import { version } from "../../package.json";
 import { useGame } from "../context/GameContext";
 import useAuth from "../auth/useAuth";
 import useProfile from "../hooks/useProfile";
-import useAchievements from "../hooks/useAchievements";
-import { getLevelInfo } from "../utils/xpLevel";
+
 import lessons from "../data/lessons";
 import modules from "../data/modules";
-import achievementsData from "../data/achievements";
 
 import ProfileHeader from "../components/Profile/ProfileHeader";
 import EditProfile from "../components/Profile/EditProfile";
 import ProfileStats from "../components/Profile/ProfileStats";
-import Achievements from "../components/Profile/Achievements";
 import LearningActivity from "../components/Profile/LearningActivity";
 import LearningGoals from "../components/Profile/LearningGoals";
 import SkillBadge from "../components/SkillBadge/SkillBadge";
@@ -30,16 +27,14 @@ const SKILLS = [
 
 export default function Profile() {
   const {
-    xp,
-    streak,
     completedLessons,
     completedLabs,
     quizResults,
-    achievements,
     firstSeenDate,
   } = useGame();
 
   const { user } = useAuth();
+
   const {
     profile,
     updateProfile,
@@ -48,19 +43,19 @@ export default function Profile() {
     uploadBanner,
     removeBanner,
   } = useProfile();
-  const { achievements: achievementsWithState } = useAchievements();
+
   const [isEditing, setIsEditing] = useState(false);
   const [isSaving, setIsSaving] = useState(false);
   const [saveError, setSaveError] = useState("");
-
-  const level = getLevelInfo(xp);
 
   const progressPercent = Math.round(
     (completedLessons.length / lessons.length) * 100
   );
 
   const coursesCompleted = modules.filter((module) =>
-    module.lessons.every((lesson) => completedLessons.includes(lesson.id))
+    module.lessons.every((lesson) =>
+      completedLessons.includes(lesson.id)
+    )
   ).length;
 
   const quizzesCompleted = Object.values(quizResults).filter(
@@ -72,16 +67,24 @@ export default function Profile() {
   );
 
   const skillProgress = SKILLS.map((skill) => {
-    const module = modules.find((m) => m.id === skill.moduleId);
+    const module = modules.find(
+      (m) => m.id === skill.moduleId
+    );
+
     const total = module ? module.lessons.length : 0;
+
     const completed = module
-      ? module.lessons.filter((lesson) => completedLessons.includes(lesson.id))
-          .length
+      ? module.lessons.filter((lesson) =>
+          completedLessons.includes(lesson.id)
+        ).length
       : 0;
 
     return {
       ...skill,
-      percentage: total > 0 ? Math.round((completed / total) * 100) : 0,
+      percentage:
+        total > 0
+          ? Math.round((completed / total) * 100)
+          : 0,
     };
   });
 
@@ -96,7 +99,7 @@ export default function Profile() {
       setSaveError(
         error instanceof Error
           ? error.message
-          : "We couldn't save your profile. Please try again."
+          : "Couldn't save profile."
       );
     } finally {
       setIsSaving(false);
@@ -121,13 +124,14 @@ export default function Profile() {
       ) : (
         <ProfileHeader
           profile={profile}
-          xp={xp}
-          streak={streak}
           memberSince={firstSeenDate}
           lastActiveAt={user?.lastLoginAt}
+          lessonsCompleted={completedLessons.length}
+          totalLessons={lessons.length}
+          completedLabs={completedLabs.length}
+          quizzesCompleted={quizzesCompleted}
           modulesCompleted={coursesCompleted}
           totalModules={modules.length}
-          achievements={achievementsWithState}
           onEditClick={() => setIsEditing(true)}
           onUploadAvatar={uploadAvatar}
           onRemoveAvatar={removeAvatar}
@@ -137,76 +141,36 @@ export default function Profile() {
       )}
 
       <ProfileStats
-        xp={xp}
-        levelNumber={level.levelNumber}
-        levelTitle={level.title}
         coursesCompleted={coursesCompleted}
         totalCourses={modules.length}
         lessonsCompleted={completedLessons.length}
         totalLessons={lessons.length}
-        streak={streak}
-        badgesEarned={achievements.length}
-        totalBadges={achievementsData.length}
+        completedLabs={completedLabs.length}
+        quizzesCompleted={quizzesCompleted}
       />
 
-      {/* Progress */}
-      <section className="bg-fedora-surface border border-fedora-border rounded-xl p-8 shadow-sm mb-8">
-        <h2 className="text-xl font-display text-fedora-text mb-1">
-          Overall Progress
+      <section className="bg-fedora-surface border border-fedora-border rounded-xl p-8 mb-8">
+        <h2 className="text-xl font-display text-fedora-text mb-2">
+          Learning Progress
         </h2>
-        <p className="text-fedora-muted text-sm mb-4">
-          {progressPercent}% of the course complete
-        </p>
 
-        <div className="w-full h-3 bg-fedora-border rounded-full overflow-hidden mb-6">
+        <div className="w-full h-3 bg-fedora-border rounded-full overflow-hidden mb-4">
           <div
-            className="h-full bg-fedora-accent rounded-full transition-all duration-700"
+            className="h-full bg-fedora-accent"
             style={{ width: `${progressPercent}%` }}
           />
         </div>
 
-        <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
-          <div>
-            <p className="text-2xl font-display text-fedora-text">
-              {completedLessons.length} / {lessons.length}
-            </p>
-            <p className="text-fedora-muted text-sm">Lessons completed</p>
-          </div>
-          <div>
-            <p className="text-2xl font-display text-fedora-text">
-              {completedLabs.length}
-            </p>
-            <p className="text-fedora-muted text-sm">Labs completed</p>
-          </div>
-          <div>
-            <p className="text-2xl font-display text-fedora-text">
-              {quizzesCompleted}
-            </p>
-            <p className="text-fedora-muted text-sm">Quizzes passed</p>
-          </div>
-        </div>
+        <p className="text-fedora-muted">
+          {progressPercent}% of the course completed.
+        </p>
       </section>
 
-      <Achievements achievementsData={achievementsData} unlockedIds={achievements} />
-
-      {/* Learning Profile */}
       <section className="mb-8">
         <h2 className="text-xl font-display text-fedora-text mb-4">
-          Learning Profile
+          Fedora Skills
         </h2>
 
-        <div className="bg-fedora-surface border border-fedora-border rounded-xl p-6 mb-4">
-          <p className="text-fedora-muted text-sm mb-1">
-            Current Learning Path
-          </p>
-          <p className="text-fedora-text font-display">
-            {nextLesson
-              ? `${nextLesson.day} — ${nextLesson.title}`
-              : "Course complete! 🎉"}
-          </p>
-        </div>
-
-        <p className="text-fedora-muted text-sm mb-3">Fedora Skills</p>
         <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
           {skillProgress.map((skill) => (
             <SkillBadge
@@ -222,7 +186,6 @@ export default function Profile() {
         completedLessons={completedLessons.length}
         completedLabs={completedLabs.length}
         quizzesCompleted={quizzesCompleted}
-        streak={streak}
       />
 
       <LearningGoals
@@ -234,80 +197,81 @@ export default function Profile() {
         progressPercent={progressPercent}
       />
 
-      {/* Quick Actions */}
       <section className="mb-8">
         <h2 className="text-xl font-display text-fedora-text mb-4">
           Quick Actions
         </h2>
-        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-5 gap-4">
+
+        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
           <Button
             as={Link}
             to={nextLesson ? `/lesson/${nextLesson.id}` : "/course"}
-            className="text-center"
           >
             Continue Learning
           </Button>
+
           <Button
             as={Link}
             to="/labs"
             variant="secondary"
-            className="text-center"
           >
             Open Labs
           </Button>
+
           <Button
             as={Link}
             to="/commands"
             variant="secondary"
-            className="text-center"
           >
             Practice Commands
           </Button>
+
           <Button
             as={Link}
             to="/course"
             variant="secondary"
-            className="text-center"
           >
-            Take Quiz
-          </Button>
-          <Button
-            as={Link}
-            to="/achievements"
-            variant="secondary"
-            className="text-center"
-          >
-            View Achievements
+            Course
           </Button>
         </div>
       </section>
 
-      {/* Footer */}
       <section className="bg-fedora-surface border border-fedora-border rounded-xl p-6">
         <div className="grid grid-cols-2 sm:grid-cols-4 gap-6 text-center">
           <div>
-            <p className="text-fedora-muted text-xs uppercase tracking-wide mb-1">
+            <p className="text-xs text-fedora-muted">
               Member Since
             </p>
-            <p className="text-fedora-text font-display">{firstSeenDate}</p>
+            <p className="text-fedora-text">
+              {firstSeenDate}
+            </p>
           </div>
+
           <div>
-            <p className="text-fedora-muted text-xs uppercase tracking-wide mb-1">
+            <p className="text-xs text-fedora-muted">
               Version
             </p>
-            <p className="text-fedora-text font-display">v{version}</p>
-          </div>
-          <div>
-            <p className="text-fedora-muted text-xs uppercase tracking-wide mb-1">
-              Rank
+            <p className="text-fedora-text">
+              v{version}
             </p>
-            <p className="text-fedora-text font-display">{level.title}</p>
           </div>
+
           <div>
-            <p className="text-fedora-muted text-xs uppercase tracking-wide mb-1">
-              Study Time
+            <p className="text-xs text-fedora-muted">
+              Modules
             </p>
-            <p className="text-fedora-text font-display">Not yet tracked</p>
+            <p className="text-fedora-text">
+              {coursesCompleted}/{modules.length}
+            </p>
+          </div>
+
+          <div>
+            <p className="text-xs text-fedora-muted">
+              Status
+            </p>
+            <p className="text-fedora-text">
+              Learning
+            </p>
           </div>
         </div>
       </section>
