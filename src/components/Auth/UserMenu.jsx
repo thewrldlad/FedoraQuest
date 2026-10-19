@@ -1,7 +1,6 @@
 import { useState, useRef, useEffect } from "react";
 import { Link, useNavigate } from "react-router-dom";
 import {
-  User,
   BookOpen,
   Award,
   GraduationCap,
@@ -61,14 +60,6 @@ export default function UserMenu({ collapsed, direction = "up" }) {
             direction === "down" ? "top-full mt-2" : "bottom-full mb-2"
           }`}
         >
-          <Link
-            to="/profile"
-            onClick={() => setOpen(false)}
-            className="flex items-center gap-2 px-4 py-2 text-sm text-fedora-text hover:bg-fedora-border transition-colors"
-          >
-            <User size={16} /> My Profile
-          </Link>
-
           <Link
             to="/course"
             onClick={() => setOpen(false)}

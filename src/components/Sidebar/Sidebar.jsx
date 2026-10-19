@@ -1,15 +1,11 @@
 import { Link, useLocation } from "react-router-dom";
 import { useState } from "react";
-import { useGame } from "../../context/GameContext";
 import UserMenu from "../Auth/UserMenu";
 import {
   LayoutDashboard,
   BookOpen,
   Terminal,
   FlaskConical,
-  Award,
-  User,
-  Flame,
   ChevronsLeft,
   ChevronsRight,
 } from "lucide-react";
@@ -49,24 +45,11 @@ const navGroups = [
       },
     ],
   },
-        {
-  label: "Track",
-  items: [
-    {
-      id: "profile",
-      label: "Profile",
-      path: "/profile",
-      icon: User,
-    },
-  ],
-},
- 
 ];
 
 export default function Sidebar() {
   const [collapsed, setCollapsed] = useState(false);
   const location = useLocation();
-  const { streak } = useGame();
 
   return (
     <div
@@ -143,22 +126,6 @@ export default function Sidebar() {
       <div className="border-t border-fedora-border p-3">
 
         <UserMenu collapsed={collapsed} />
-
-        <div className="mt-3 rounded-md px-3 py-2.5 flex items-center gap-2 bg-fedora-bg">
-          <Flame size={16} className="text-fedora-streak" />
-
-          {!collapsed && (
-            <span className="text-sm text-fedora-text">
-              <span className="font-medium">
-                {streak} day
-              </span>{" "}
-              <span className="text-fedora-muted">
-                streak
-              </span>
-            </span>
-          )}
-
-        </div>
 
       </div>
 
