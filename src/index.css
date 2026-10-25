@@ -1,14 +1,14 @@
 @import "tailwindcss";
 
 @theme {
-  /* Fedora Quest — professional dark blue palette */
-  --color-fedora-bg: #0d1b2e;
-  --color-fedora-surface: #14243d;
-  --color-fedora-border: #1c3454;
-  --color-fedora-accent: #3c6eb4;
-  --color-fedora-accent-light: #7fb8e8;
-  --color-fedora-text: #c7d4e3;
-  --color-fedora-muted: #6b7f99;
+  /* Fedora L — black and neutral palette */
+  --color-fedora-bg: #000000;
+  --color-fedora-surface: #080808;
+  --color-fedora-border: #242424;
+  --color-fedora-accent: #191919;
+  --color-fedora-accent-light: #ffffff;
+  --color-fedora-text: #f5f5f5;
+  --color-fedora-muted: #a3a3a3;
   --color-fedora-streak: #e08a3c;
 
   --font-display: "Red Hat Display", sans-serif;
@@ -72,13 +72,13 @@
 /* ---------- Themes ---------- */
 
 :root[data-theme="light"] {
-  --color-fedora-bg: #f4f6fa;
-  --color-fedora-surface: #ffffff;
-  --color-fedora-border: #dde3ec;
-  --color-fedora-accent: #3c6eb4;
-  --color-fedora-accent-light: #2f5a94;
-  --color-fedora-text: #1c2b3a;
-  --color-fedora-muted: #5b6b7c;
+  --color-fedora-bg: #000000;
+  --color-fedora-surface: #080808;
+  --color-fedora-border: #242424;
+  --color-fedora-accent: #191919;
+  --color-fedora-accent-light: #ffffff;
+  --color-fedora-text: #f5f5f5;
+  --color-fedora-muted: #a3a3a3;
   --color-fedora-streak: #c96f1e;
 }
 

@@ -7,7 +7,7 @@ const MAX_SIZE_BYTES = 8 * 1024 * 1024;
 // Cover/banner image with a hover-to-reveal edit control, matching the
 // same interaction pattern GitHub/LinkedIn use for cover photos — no
 // separate "Change Banner" button cluttering the Edit Profile modal.
-// Falls back to a Fedora-blue gradient (not a static image asset, since
+// Falls back to a monochrome gradient (not a static image asset, since
 // none exists in this project) when no custom banner has been uploaded.
 export default function ProfileBanner({ value, onUpload, onRemove }) {
   const fileInputRef = useRef(null);
@@ -58,7 +58,7 @@ export default function ProfileBanner({ value, onUpload, onRemove }) {
   };
 
   return (
-    <div className="group relative h-36 sm:h-52 lg:h-60 w-full overflow-hidden rounded-t-2xl bg-gradient-to-br from-fedora-accent via-[#28558c] to-fedora-bg">
+    <div className="group relative h-36 sm:h-52 lg:h-60 w-full overflow-hidden rounded-t-2xl bg-gradient-to-br from-fedora-accent via-[#111111] to-fedora-bg">
       {showImage && (
         <img
           src={value}
@@ -69,7 +69,7 @@ export default function ProfileBanner({ value, onUpload, onRemove }) {
       )}
 
       <div className="absolute inset-0 bg-gradient-to-t from-fedora-surface via-fedora-surface/25 to-transparent" />
-      <div className="absolute inset-0 bg-[radial-gradient(circle_at_12%_10%,rgba(127,184,232,0.45),transparent_35%),radial-gradient(circle_at_82%_18%,rgba(60,110,180,0.55),transparent_30%)]" />
+      <div className="absolute inset-0 bg-[radial-gradient(circle_at_12%_10%,rgba(255,255,255,0.08),transparent_35%),radial-gradient(circle_at_82%_18%,rgba(255,255,255,0.05),transparent_30%)]" />
 
       <div className="absolute left-5 bottom-5 sm:left-8 sm:bottom-7">
         <p className="text-[11px] font-semibold uppercase tracking-[0.18em] text-white/70">
